@@ -37,7 +37,10 @@ exec 9> "$ILDIZ/deploy.lock"
 if ! flock -n 9; then log "RAD ETILDI: boshqa deploy ishlayapti"; exit 75; fi
 
 cd "$ILDIZ/app"
-dc() { API_IMAGE="$REGISTRY/api:$1" WEB_IMAGE="$REGISTRY/web:$1" docker compose -p "$LOYIHA" -f compose.yaml -f compose.prod.yaml --profile sinov "${@:2}"; }
+# 34 #07: compose.bluegreen.yaml bor bo'lsa — har xizmat IKKI nusxada va birma-bir yangilanadi (uzilishsiz); yo'q bo'lsa — oddiy recreate
+QATLAMLAR=(-f compose.yaml -f compose.prod.yaml)
+[[ -f compose.bluegreen.yaml ]] && QATLAMLAR+=(-f compose.bluegreen.yaml)
+dc() { API_IMAGE="$REGISTRY/api:$1" WEB_IMAGE="$REGISTRY/web:$1" docker compose -p "$LOYIHA" "${QATLAMLAR[@]}" --profile sinov "${@:2}"; }
 
 tayyor() { # tayyor <teg> — 60 s ichida zanjir (host → web → api) javob beradimi
   for _ in $(seq 1 60); do
@@ -60,7 +63,16 @@ ornat() { # ornat <teg>
   dc "$t" up -d --no-build --wait db redis pochta > /dev/null 2>&1 || { log "[$t] XATO: db/redis tayyor emas"; return 1; }
   dc "$t" run --rm --no-deps migratsiya > /dev/null 2>&1 || { log "[$t] XATO: migratsiya yiqildi"; return 1; }
   log "[$t] api, ishchi, web yangilanmoqda"
-  dc "$t" up -d --no-build --no-deps --wait --wait-timeout 120 api ishchi web > /dev/null 2>&1 || { log "[$t] XATO: konteynerlar healthy bo'lmadi"; return 1; }
+  if [[ -f compose.bluegreen.yaml ]]; then
+    # birma-bir: biri qayta yaratilayotganda ikkinchisi javob beradi (web nginx — ikkala api, host nginx — ikkala web; proxy_next_upstream)
+    local x
+    for x in api api-yashil ishchi web web-yashil; do
+      dc "$t" up -d --no-build --no-deps --wait --wait-timeout 120 "$x" > /dev/null 2>&1 || { log "[$t] XATO: $x healthy bo'lmadi"; return 1; }
+      log "[$t] $x yangilandi"
+    done
+  else
+    dc "$t" up -d --no-build --no-deps --wait --wait-timeout 120 api ishchi web > /dev/null 2>&1 || { log "[$t] XATO: konteynerlar healthy bo'lmadi"; return 1; }
+  fi
   tayyor "$t" || { log "[$t] XATO: $HEALTH_URL 60 s da 401 bermadi"; return 1; }
 }
 
