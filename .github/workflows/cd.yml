@@ -1,0 +1,68 @@
+# .github/workflows/cd.yml — 34-qism #06 (O-48): CI yashil bo'lsa → image'lar (arm64, server arxitekturasi) GHCR'ga → serverga deploy.
+#   push → CI (ci.yml) → shu workflow (workflow_run) → image → deploy. CI qizil bo'lsa deploy YO'Q.
+#   Server tomonda kalit faqat `deploy <teg>` qila oladi (authorized_keys command= + sudoers bitta skript) — natijalar/server/.
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      teg:
+        description: "Qayta deploy / rollback uchun mavjud image tegi (sha-<40 hex> yoki vX.Y.Z). Bo'sh — joriy commit"
+        required: false
+
+permissions:
+  contents: read
+
+# bir vaqtda faqat bitta deploy; navbatdagisi kutadi (bekor qilinmaydi — yarim deploy xavfli)
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+jobs:
+  image:
+    # qo'lda + teg berilgan (rollback) — image qayta qurilmaydi
+    if: (github.event_name == 'workflow_dispatch' && inputs.teg == '') || github.event.workflow_run.conclusion == 'success'
+    strategy:
+      matrix:
+        include:
+          - { nom: api, papka: vazifalar-api }
+          - { nom: web, papka: vazifalar }
+    permissions:
+      contents: read
+      packages: write                  # faqat GHCR'ga yozish uchun — shu job'da
+    uses: ./.github/workflows/_image.yml
+    with:
+      nom: ${{ matrix.nom }}
+      papka: ${{ matrix.papka }}
+      sha: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+  deploy:
+    needs: image
+    # #08: rollback — image job o'tkazib yuborilgan (skipped) bo'lsa ham, qo'lda teg berilganda deploy ishlaydi
+    if: ${{ !cancelled() && (needs.image.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.teg != '')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # #03: environment — deploy kaliti FAQAT shu muhitning sirlarida; main'dan boshqa branch bu muhitga kira olmaydi (deployment branch policy)
+    environment:
+      name: production
+      url: https://sinov.wisar.uz
+    steps:
+      - name: Deploy (cheklangan kalit — serverda faqat `deploy <teg>`)
+        env:
+          KALIT: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          TEG: ${{ inputs.teg || format('sha-{0}', github.event.workflow_run.head_sha || github.sha) }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KALIT" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "kanon34@$HOST" "$TEG"
+      - name: Tashqaridan tekshiruv
+        run: |
+          curl -sS -o /dev/null -w "/ %{http_code}\n" https://sinov.wisar.uz/
+          curl -sS -o /dev/null -w "/v1/vazifalar %{http_code}\n" https://sinov.wisar.uz/v1/vazifalar
