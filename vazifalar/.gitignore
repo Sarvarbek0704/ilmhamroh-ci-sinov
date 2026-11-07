@@ -1,0 +1,19 @@
+node_modules/
+dist/
+# npm run build:profil (18/#22)
+dist-profil/
+# npm run analiz natijasi
+analiz/
+# Shaxsiy sozlamalar (.env.local, .env.development.local) — faqat
+# o'z kompyuteringizda; .env.production va .env.development — umumiy
+*.local
+# npm run test:qamrov hisoboti (22/#03)
+coverage/
+# Vitest Browser Mode: yiqilgan test skrinshotlari (22/#08)
+.vitest/
+# Playwright (22/#09): hisobot, trace/skrinshotlar, kirish holati
+playwright-report/
+test-results/
+e2e/.auth/
+# Storybook (22/#11): npm run build-storybook natijasi
+storybook-static/

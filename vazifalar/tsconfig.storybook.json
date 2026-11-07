@@ -1,0 +1,23 @@
+{
+  // 22/#11: Storybook — story fayllari va .storybook/ (brauzer kodi kabi)
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.storybook.tsbuildinfo",
+    // VOSITA MUAMMOSI (o'lchandi): @storybook/react 10.6.1 tur fayli interfeys
+    // "extends" ida @ts-expect-error ga tayanadi — TypeScript 7 (tsgo) u yerda
+    // xato bermaydi → TS2578 + TS2344 (4 xato, node_modules ichida). Faqat shu
+    // loyihada kutubxona .d.ts lari tekshirilmaydi; o'z kodimiz — to'liq strict
+    "skipLibCheck": true
+  },
+  "include": [
+    "stories",
+    ".storybook/*.ts",
+    ".storybook/*.tsx",
+    "src/vite-env.d.ts",
+    "src/trusted-types.d.ts",
+    "src/react-kengaytma.d.ts",
+    "src/dnd-kit-jsx.d.ts",
+    "src/fayl-tizimi.d.ts",
+    "src/i18n/turlar.d.ts"
+  ]
+}

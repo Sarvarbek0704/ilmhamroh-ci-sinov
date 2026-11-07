@@ -1,0 +1,21 @@
+# Prettier faqat JavaScript'ni formatlaydi.
+# HTML va CSS — kurs uslubida (masalan, <meta> "/>" siz): Prettier
+# ularni o'z uslubiga o'tkazadi, buni sozlab bo'lmaydi.
+*.html
+*.css
+# Markdown jadvallari hizalanib, qatorlar juda uzayadi
+*.md
+package-lock.json
+
+# Build natijasi (npm run build) va tahlil (npm run analiz)
+dist/
+dist-profil/
+analiz/
+coverage/
+.vitest/
+# MSW yaratgan fayl (npx msw init) — formatlanmaydi
+tekshiruv/msw/ommaviy/
+playwright-report/
+test-results/
+e2e/.auth/
+storybook-static/

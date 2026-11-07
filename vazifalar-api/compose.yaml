@@ -1,0 +1,121 @@
+# compose.yaml — 33-qism #31–#33 (O-37…O-39): vazifalar (web + api) + Postgres + Redis — bitta buyruq bilan.
+#   Lokal:      docker compose up -d --build          (http://127.0.0.1:4780 — web; /v1/ ni web konteyneri ichidagi nginx api:3000 ga uzatadi)
+#   Server:     docker compose -f compose.yaml -f compose.prod.yaml --profile sinov up -d   (#33, #38)
+# Papka tuzilishi: vazifalar-api/ (shu fayl) va vazifalar/ (web) yonma-yon (kurs/ ichida). Sirlar — .env (git'da EMAS; namuna — .env.compose.example)
+name: vazifalar
+
+x-api: &api
+  image: ${API_IMAGE:-vazifalar-api:4.1.0}
+  build:
+    context: .
+  env_file: .env
+  environment: &api-env
+    NODE_ENV: ${NODE_ENV:-production}
+    HOST: 0.0.0.0
+    PORT: "3000"
+    SAQLASH: prisma
+    DATABASE_URL: postgres://vazifalar_api:${API_DB_PAROL:?API_DB_PAROL kerak}@db:5432/vazifalar
+    AUTH_DATABASE_URL: postgres://vazifalar_auth:${AUTH_DB_PAROL:?AUTH_DB_PAROL kerak}@db:5432/vazifalar
+    REDIS_URL: redis://:${REDIS_PAROL:?REDIS_PAROL kerak}@redis:6379
+    # TRUST_PROXY = haqiqiy proxy'lar soni. Lokal: web nginx → api (1). Server: host nginx → web nginx → api (2 — compose.prod.yaml).
+    # 33 #32 o'lchovi: lokalda 2 qo'yilganda soxta "X-Forwarded-For: 6.6.6.6" API'da mijoz IP'si bo'lib qoldi (ortiqcha hop'ga ishonish = IP soxtalash)
+    TRUST_PROXY: ${TRUST_PROXY:-1}
+    # pochta: haqiqiy SMTP bo'lmagan muhitda (lokal, sinov serveri) — Mailpit STARTTLS bilan (production SMTP'da TLS majburiy — 33 #07).
+    # Docker env — haqiqiy muhit: NODE_EXTRA_CA_CERTS ishlaydi (PM2 --env-file dagidek muammo yo'q — #26)
+    SMTP_HOST: ${SMTP_HOST:-pochta}
+    SMTP_PORT: ${SMTP_PORT:-1025}
+    NODE_EXTRA_CA_CERTS: ${NODE_EXTRA_CA_CERTS:-/tls/pochta/sert.pem}
+  volumes:
+    - ./tls/pochta/sert.pem:/tls/pochta/sert.pem:ro
+  networks: [ichki]
+
+services:
+  db:
+    image: pgvector/pgvector:0.8.7-pg18-trixie
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PAROL:?POSTGRES_PAROL kerak}
+      POSTGRES_DB: vazifalar
+      TZ: UTC
+    volumes:
+      - db-data:/var/lib/postgresql        # PG18 image: ma'lumot /var/lib/postgresql/18/docker (27-qism tuzog'i)
+    shm_size: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vazifalar"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [ichki]                      # port nashr qilinmaydi — faqat ichki tarmoqda
+
+  redis:
+    image: redis:8.8.4
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PAROL:?REDIS_PAROL kerak}"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PAROL\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      REDIS_PAROL: ${REDIS_PAROL}
+    networks: [ichki]
+
+  # bir martalik: migratsiyalar (superuser — DDL va rollar) + ilova rollariga parol (migratsiyalar rolni PAROLSIZ yaratadi)
+  migratsiya:
+    <<: *api
+    command: ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node scripts/rol-parollari.mjs"]
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PAROL}@db:5432/vazifalar
+      API_DB_PAROL: ${API_DB_PAROL}
+      AUTH_DB_PAROL: ${AUTH_DB_PAROL}
+      ISHCHI_DB_PAROL: ${ISHCHI_DB_PAROL:?ISHCHI_DB_PAROL kerak}
+    env_file: []
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    <<: *api
+    depends_on:
+      migratsiya: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    # port NASHR QILINMAYDI: faqat web konteyneri (ichki tarmoq) orqali
+
+  ishchi:
+    <<: *api
+    command: ["node", "dist/ishchi.js"]
+    environment:
+      <<: *api-env
+      ISHCHI_DATABASE_URL: postgres://vazifalar_ishchi:${ISHCHI_DB_PAROL}@db:5432/vazifalar
+    depends_on:
+      migratsiya: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    healthcheck:
+      disable: true
+
+  web:
+    image: ${WEB_IMAGE:-vazifalar-web:12.1.0}
+    build:
+      context: ../vazifalar
+      args:
+        VITE_API_URL: /v1
+    ports:
+      - "127.0.0.1:${WEB_PORT:-4780}:8080"
+    # web nginx ishga tushishda "api" nomini resolve qiladi — api yo'q bo'lsa: "host not found in upstream" (33 #32 o'lchovi)
+    depends_on:
+      api: { condition: service_healthy }
+    networks: [ichki]
+
+  pochta:
+    image: axllent/mailpit:v1.33.0
+    command: ["--smtp-tls-cert", "/tls/sert.pem", "--smtp-tls-key", "/tls/kalit.pem", "--smtp-require-starttls"]
+    volumes:
+      - ./tls/pochta:/tls:ro
+    networks: [ichki]
+
+volumes:
+  db-data:
+  redis-data:
+
+networks:
+  ichki:

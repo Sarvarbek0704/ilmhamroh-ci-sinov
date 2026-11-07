@@ -1,0 +1,17 @@
+# /etc/systemd/system/vazifalar-zaxira.service — 33-qism #09: zaxira bir martalik ish (timer ishga tushiradi). Qo'lda: systemctl start vazifalar-zaxira
+[Unit]
+Description=vazifalar bazasi zaxirasi (pg_dump)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=postgres-zaxira
+EnvironmentFile=/etc/vazifalar-api/zaxira.env
+ExecStart=/opt/vazifalar-api/deploy/skriptlar/zaxira.sh
+Nice=10
+IOSchedulingClass=idle
+ProtectSystem=strict
+ReadWritePaths=/var/backups/vazifalar
+PrivateTmp=true
+NoNewPrivileges=true

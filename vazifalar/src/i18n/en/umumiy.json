@@ -1,0 +1,40 @@
+{
+  "ilova": "Tasks",
+  "sahifaNomi": "{{sahifa}} — Tasks",
+  "otish": {
+    "royxat": "Skip to list",
+    "asosiy": "Skip to main content"
+  },
+  "bolimlar": {
+    "nomi": "Sections",
+    "royxat": "List",
+    "statistika": "Statistics",
+    "sozlamalar": "Settings",
+    "yordamchi": "Assistant"
+  },
+  "hisob": {
+    "matn": "{{qoldi}}, {{bajarildi}}",
+    "qoldi_one": "{{count}} task left",
+    "qoldi_other": "{{count}} tasks left",
+    "bajarildi_one": "{{count}} done",
+    "bajarildi_other": "{{count}} done"
+  },
+  "statistika": {
+    "jami": "Total",
+    "qoldi": "Left",
+    "bajarildi": "Done",
+    "foiz": "{{bajarildi}} ({{ulush, number(style: percent)}})",
+    "vaqt": "As of {{vaqt, sana}}",
+    "tegYoq": "No tags.",
+    "teglar": "Tags: {{royxat}}"
+  },
+  "topilmadi": {
+    "sarlavha": "Page not found",
+    "matn": "There is no page at «{{yol}}».",
+    "qaytish": "Back to the list"
+  },
+  "yangilanish": {
+    "matn": "A new version is ready.",
+    "tugma": "Update"
+  }
+}

@@ -1,0 +1,11 @@
+# /etc/fail2ban/jail.d/sshd.local — 33-qism #14 (O-14). Ubuntu 24.04: loglar journald'da — backend = systemd.
+[sshd]
+enabled  = true
+backend  = systemd
+# 10 daqiqa ichida 5 xato → 1 soat blok; takrorlansa (recidive) — uzoqroq
+maxretry = 5
+findtime = 10m
+bantime  = 1h
+bantime.increment = true
+# o'z IP'ingizni (ofis, VPN) qo'shing — o'zingizni bloklab qo'ymang
+ignoreip = 127.0.0.1/8 ::1

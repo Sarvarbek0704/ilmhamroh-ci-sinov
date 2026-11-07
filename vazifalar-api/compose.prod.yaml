@@ -1,0 +1,74 @@
+# compose.prod.yaml — 33-qism #33 (O-39): production qatlami (override). Ishlatish:
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d
+# Nima qo'shadi: restart siyosati, healthcheck'lar, stop_grace_period (SIGTERM o'lchovi bilan), resurs chegaralari (jami ≤ 2 CPU / 2 GB — asosiy server
+# qoidasi), log hajmi chegarasi, image'lar build'siz (serverda oldindan qurilgan/yuklangan teg), web porti faqat 127.0.0.1 (host nginx orqali).
+x-log: &log
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }   # sukut — cheksiz (disk to'ladi — 33 #35)
+
+services:
+  db:
+    <<: *log
+    restart: unless-stopped
+    stop_grace_period: 30s          # Postgres "smart" shutdown — checkpoint; sukut 10 s yetmasligi mumkin
+    deploy:
+      resources:
+        limits: { cpus: "0.50", memory: 512M }
+
+  redis:
+    <<: *log
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "0.20", memory: 128M }
+
+  migratsiya:
+    <<: *log
+    deploy:
+      resources:
+        limits: { cpus: "0.30", memory: 384M }
+
+  api:
+    <<: *log
+    restart: unless-stopped
+    # 33 #33 o'lchovi: SIGTERM → YOPISH_KECHIKISH_MS (5 s) + ulanishlarni kutish (≤ 10 s) + yopish. Docker sukuti 10 s — undan oshsa SIGKILL (137).
+    # 30 s = eng yomon holat (15 s) × 2 zaxira (32/31 BACKLOG 3)
+    stop_grace_period: 30s
+    environment:
+      YOPISH_KECHIKISH_MS: "5000"
+      TRUST_PROXY: "2"               # host nginx ($remote_addr — mijoz sarlavhasini almashtiradi) → web nginx → api
+    healthcheck:
+      # live — jarayon tirikmi (restart uchun emas: Docker o'zi restart qilmaydi, faqat holat). timeout 3 s (BACKLOG: probe timeoutSeconds 3)
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health/live').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      start_period: 40s
+      retries: 3
+    deploy:
+      resources:
+        limits: { cpus: "0.50", memory: 512M }
+
+  ishchi:
+    <<: *log
+    restart: unless-stopped
+    stop_grace_period: 30s
+    deploy:
+      resources:
+        limits: { cpus: "0.25", memory: 384M }
+
+  web:
+    <<: *log
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "0.15", memory: 64M }
+
+  pochta:
+    <<: *log
+    restart: unless-stopped
+    # sinov muhiti uchun (haqiqiy SMTP yo'q): Mailpit UI'si nashr qilinmaydi
+    profiles: ["sinov"]
+    deploy:
+      resources:
+        limits: { cpus: "0.10", memory: 64M }

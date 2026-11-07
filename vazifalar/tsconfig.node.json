@@ -1,0 +1,26 @@
+{
+  // Node'da ishlaydigan kod (16/#42): Vite sozlamasi, plagin va
+  // skriptlar. Brauzer kodi — tsconfig.app.json (DOM bor, Node yo'q)
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    // tsc -b ning holat fayli (tsbuildinfo) — node_modules ichida,
+    // git'ga kirmaydi
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    // skriptlar/*.js — JSDoc bilan, tsc ularni ham tekshiradi
+    "allowJs": true,
+    "checkJs": true,
+    "target": "es2024",
+    // DOM yo'q: document, window bu yerda xato bo'lishi kerak
+    "lib": ["es2024"],
+    // process, node:fs, import.meta.main... — @types/node
+    "types": ["node"],
+    "module": "esnext",
+    "moduleResolution": "bundler"
+  },
+  "include": ["vite.config.ts", "skriptlar"]
+}

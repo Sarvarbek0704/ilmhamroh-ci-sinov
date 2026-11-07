@@ -1,0 +1,12 @@
+{
+  // 22/#09: e2e testlar va playwright.config.ts — Node'da ishlaydi
+  // (Playwright Test), lekin page.evaluate ichidagi kod — brauzerda,
+  // Playwright turlari ham DOM'ga tayanadi: Node + DOM
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.e2e.tsbuildinfo",
+    "lib": ["es2024", "DOM"],
+    "allowImportingTsExtensions": true
+  },
+  "include": ["playwright.config.ts", "e2e"]
+}

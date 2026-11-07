@@ -1,0 +1,18 @@
+{
+  // Ikki xil muhit — ikki tsconfig (16/#42): brauzer (src/) va Node
+  // (vite.config.ts, skriptlar/); 17/#09 dan uchinchisi — komponent
+  // testlari (tekshiruv/*.tsx). tsc -b hammasini tekshiradi;
+  // tahrirlovchi va ESLint ham shu fayldan topadi
+  "files": [],
+  // 20/#02: shadcn CLI @/ taxallusini shu fayldan qidiradi (references
+  // ichiga kirmaydi) — tsconfig.app.json dagi bilan bir xil
+  "compilerOptions": { "paths": { "@/*": ["./src/*"] } },
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" },
+    { "path": "./tsconfig.test.json" },
+    { "path": "./tsconfig.vitest.json" },
+    { "path": "./tsconfig.e2e.json" },
+    { "path": "./tsconfig.storybook.json" }
+  ]
+}

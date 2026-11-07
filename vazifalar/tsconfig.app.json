@@ -1,0 +1,57 @@
+{
+  // Brauzer kodi — src/ (16/#42 da tsconfig.json dan ajratildi; Node
+  // tomoni — tsconfig.node.json). 15/#45 dan: faqat .ts va .tsx (17),
+  // allowJs yo'q
+  "compilerOptions": {
+    "strict": true,
+    // strict'ga kirmaydigan, lekin xato ushlaydigan bayroqlar (15/#34):
+    // massiv[i] va obyekt[kalit] — T | undefined
+    "noUncheckedIndexedAccess": true,
+    // { a?: string } ga a: undefined yozib bo'lmaydi — faqat tushirib
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    // 18/#34: yana uchta — o'lchandi, kanonda 0 xato (bepul himoya):
+    // yon ta'sirli import fayli yo'q bo'lsa xato, yetib bo'lmaydigan kod
+    // va ishlatilmagan label — xato (ogohlantirish emas).
+    // noPropertyAccessFromIndexSignature (20 joy — dataset.id ni
+    // dataset["id"] qilish) va typescript-eslint strictTypeChecked (70,
+    // hammasi uslub) — o'lchandi, kiritilmadi (natijalar/38-*)
+    "noUncheckedSideEffectImports": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    // Node 24 .ts ni turlarini o'chirib ishga tushiradi (testlar):
+    // faqat o'chirib bo'ladigan sintaksis (enum, namespace yo'q)
+    "erasableSyntaxOnly": true,
+    // Faqat tur bo'lgan import — "import type": build'da yo'qoladi
+    "verbatimModuleSyntax": true,
+    // tsc faqat tekshiradi (16/#20): JS'ni Vite yozadi
+    "noEmit": true,
+    // tsc -b ning holat fayli (tsbuildinfo) — node_modules ichida,
+    // git'ga kirmaydi
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    // import "./sinxron.ts" — fayl nomi aynan (Node testlari ham, Vite
+    // ham .ts ni o'zi topadi)
+    "allowImportingTsExtensions": true,
+    // 21/#02: tarjima fayllari — import umumiy from "./uz/umumiy.json"
+    "resolveJsonModule": true,
+    "target": "es2024",
+    "lib": ["esnext", "dom"],
+    // JSX (17/#02): .tsx dagi <Izoh /> → jsx() chaqiruvi, "react/jsx-runtime"
+    // dan avtomatik import (React'ni har faylda import qilish shart emas)
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    // 20/#02: @/ — src/ ning taxallusi (alias): "@/ui/cn.ts" — qaysi
+    // papkada bo'lmang, bir xil yo'l. shadcn CLI komponentlarni shu
+    // yo'llar bilan yozadi (components.json). Bu yerda — faqat tsc va
+    // tahrirlovchi uchun; Vite va Vitest uchun alias o'z konfiguratsiyasida.
+    // 22/#02 gacha sof mantiq node --test da edi (@/ ni bilmasdi) —
+    // shuning uchun sof .ts fayllarda nisbiy yo'l qolgan (Vitest ikkalasini biladi)
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src"]
+}

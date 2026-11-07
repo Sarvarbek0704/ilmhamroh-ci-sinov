@@ -1,0 +1,14 @@
+# /etc/systemd/system/vazifalar-zaxira.timer — 33-qism #09: har kuni 03:00 Asia/Tashkent (UTC 22:00). Yoqish: systemctl enable --now vazifalar-zaxira.timer
+[Unit]
+Description=vazifalar zaxirasi — har kuni 03:00 (Toshkent)
+
+[Timer]
+# vaqt mintaqasi ochiq yozilgan: server soati UTC bo'lsa ham 03:00 Toshkent
+OnCalendar=*-*-* 03:00:00 Asia/Tashkent
+# server o'chiq bo'lgan paytdagi ish yoqilganda bajariladi (cron'da yo'q)
+Persistent=true
+# bir nechta server bir soniyada bazaga yopishmasin
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

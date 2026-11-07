@@ -1,0 +1,22 @@
+{
+  "sarlavha": "Settings",
+  "royxat": "List",
+  "ochirishdaSora": "Ask before deleting",
+  "ixcham": "Compact list",
+  "tema": {
+    "nomi": "Theme",
+    "tizim": "System",
+    "yorug": "Light",
+    "qorongi": "Dark"
+  },
+  "til": {
+    "nomi": "Language",
+    "izoh": "The language is kept in the address: a shared link opens in the same language."
+  },
+  "maxfiylik": {
+    "sarlavha": "Privacy",
+    "analitika": "Send anonymous usage statistics",
+    "izoh": "Only the page type and event name (no task text, numbers or your name). No cookies.",
+    "gpc": "Your browser asks not to be tracked (GPC or Do Not Track) — no statistics are sent."
+  }
+}

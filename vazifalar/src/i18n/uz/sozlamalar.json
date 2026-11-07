@@ -1,0 +1,22 @@
+{
+  "sarlavha": "Sozlamalar",
+  "royxat": "Ro'yxat",
+  "ochirishdaSora": "O'chirishdan oldin so'rash",
+  "ixcham": "Ixcham ro'yxat",
+  "tema": {
+    "nomi": "Tema",
+    "tizim": "Tizim",
+    "yorug": "Yorug'",
+    "qorongi": "Qorong'i"
+  },
+  "til": {
+    "nomi": "Til",
+    "izoh": "Til manzilda saqlanadi: havolani ulashsangiz, o'sha tilda ochiladi."
+  },
+  "maxfiylik": {
+    "sarlavha": "Maxfiylik",
+    "analitika": "Anonim foydalanish statistikasini yuborish",
+    "izoh": "Faqat sahifa turi va hodisa nomi (vazifa matni, raqami, ismingiz — yo'q). Kuki fayllar yo'q.",
+    "gpc": "Brauzeringiz kuzatmaslikni so'ragan (GPC yoki Do Not Track) — statistika yuborilmaydi."
+  }
+}

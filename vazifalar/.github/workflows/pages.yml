@@ -1,0 +1,65 @@
+# Har push'da: tekshiruv (test, lint, tip), keyin build va deploy.
+# Brauzer .ts ni o'qimaydi — saytga faqat dist/ (npm run build) chiqadi
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# CI'da git hook'lar kerak emas: npm ci dagi "prepare": "husky" jim
+# o'tadi (16/#41)
+env:
+  HUSKY: 0
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Har paket registry imzosi bilan (soxta tarball yo'q) — 16/#16
+      - run: npm audit signatures
+      # format:check, lint, tip, test — package.json "check" skripti
+      # (lokalda ham aynan shu buyruq: npm run check)
+      - run: npm run check
+
+  deploy:
+    needs: check
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # 19/#02: sayt login.github.io/<repo>/ da — yo'llar absolyut
+      # (vite.config.ts base), papka nomi repo nomidan
+      - run: npm run build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v5

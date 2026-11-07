@@ -1,0 +1,25 @@
+{
+  // Komponent testlari (17/#09): tekshiruv/*.tsx — brauzer kodi kabi
+  // (DOM, JSX), shuning uchun tsconfig.app.json sozlamalari olinadi.
+  // Sof mantiq testlari (*.test.js, Vitest "mantiq" loyihasi) — JS, tsc tekshirmaydi
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+    // 22/#08: vitest/browser turlari Node'ning BufferEncoding iga tayanadi
+    // (TS 6 da "types" sukut bo'yicha bo'sh — @types/node o'zi ulanmaydi)
+    "types": ["node"]
+  },
+  // .d.ts — global e'lonlar (import.meta.env, trustedTypes, React style'da
+  // CSS o'zgaruvchilari — 18/#38): testlar
+  // import qilgan src/ fayllari ularga tayanadi (17/#28)
+  "include": [
+    "tekshiruv/**/*.ts",
+    "tekshiruv/**/*.tsx",
+    "src/vite-env.d.ts",
+    "src/trusted-types.d.ts",
+    "src/react-kengaytma.d.ts",
+    "src/dnd-kit-jsx.d.ts",
+    "src/fayl-tizimi.d.ts",
+    "src/i18n/turlar.d.ts"
+  ]
+}

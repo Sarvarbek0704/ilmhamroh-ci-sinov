@@ -1,0 +1,40 @@
+{
+  "ilova": "Вазифалар",
+  "sahifaNomi": "{{sahifa}} — Вазифалар",
+  "otish": {
+    "royxat": "Рўйхатга ўтиш",
+    "asosiy": "Асосий қисмга ўтиш"
+  },
+  "bolimlar": {
+    "nomi": "Бўлимлар",
+    "royxat": "Рўйхат",
+    "statistika": "Статистика",
+    "sozlamalar": "Созламалар",
+    "yordamchi": "Ёрдамчи"
+  },
+  "hisob": {
+    "matn": "{{qoldi}}, {{bajarildi}}",
+    "qoldi_one": "{{count}} та вазифа қолди",
+    "qoldi_other": "{{count}} та вазифа қолди",
+    "bajarildi_one": "{{count}} та бажарилди",
+    "bajarildi_other": "{{count}} та бажарилди"
+  },
+  "statistika": {
+    "jami": "Жами",
+    "qoldi": "Қолди",
+    "bajarildi": "Бажарилди",
+    "foiz": "{{bajarildi}} ({{ulush, number(style: percent)}})",
+    "tegYoq": "Тег йўқ.",
+    "teglar": "Теглар: {{royxat}}",
+    "vaqt": "Ҳолат: {{vaqt, sana}}"
+  },
+  "topilmadi": {
+    "sarlavha": "Саҳифа топилмади",
+    "matn": "«{{yol}}» манзилида саҳифа йўқ.",
+    "qaytish": "Рўйхатга қайтиш"
+  },
+  "yangilanish": {
+    "matn": "Янги версия тайёр.",
+    "tugma": "Янгилаш"
+  }
+}

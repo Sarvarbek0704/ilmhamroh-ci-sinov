@@ -1,0 +1,472 @@
+/* asos.css — 13–19-qismdagi qoidalar (20/#02 gacha vazifalar.css edi).
+   20/#02: @layer base ichida (vazifalar.css): Tailwind utilitalari
+   (@layer utilities) shu qoidalardan USTUN — utilita yozilgan joyda u
+   yutadi. Ranglar, oraliq va burchaklar — @theme tokenlari:
+   var(--color-*), --spacing(N) (N × 0.25rem — eski --joy-N bilan bir xil),
+   var(--radius-*), var(--shadow-soya) */
+* { box-sizing: border-box; }
+/* 22/#13 (visual regression topdi): hidden atributi — brauzer qoidasi
+   (display: none) har qanday muallif CSS'idan past, Tailwind'ning
+   "inline-flex" i uni bosib ketardi: «Qayta urinish» (Tugma, hidden)
+   20/#08 dan beri DOIM ko'rinib turardi. Preflight'dagi qoida —
+   !important: qatlamlarda muhim e'lon oldingi qatlamda (base) ustun */
+[hidden]:where(:not([hidden="until-found"])) { display: none !important; }
+body {
+  margin: 0;
+  font: 1rem/1.5 system-ui, sans-serif;
+  color: var(--color-matn);
+  background: var(--color-fon);
+  transition: background-color 0.2s, color 0.2s;
+}
+main { max-width: 36rem; margin: 0 auto; padding: 1rem; }
+h1 { margin-top: 0; color: var(--color-asosiy); }
+h2 { margin-bottom: --spacing(1); font-size: 1.125rem; }
+button, input, textarea, select { font: inherit; }
+button, select {
+  min-height: var(--spacing-bosish);
+  padding: --spacing(2) --spacing(3);
+  border: 1px solid var(--color-chegara);
+  border-radius: var(--radius-burchak);
+  background: var(--color-yuza);
+  color: var(--color-matn);
+}
+button[aria-pressed="true"] {
+  border-color: var(--color-asosiy);
+  background: var(--color-asosiy);
+  color: var(--color-asosiy-ustida);
+}
+:focus-visible {
+  outline: 3px solid var(--color-asosiy);
+  outline-offset: 2px;
+}
+.qator { display: flex; gap: 0.5rem; }
+#yangi-matn, #tahrir-maydon, #qidiruv {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--spacing-bosish);
+  padding: --spacing(2);
+  border: 2px solid var(--color-ikkinchi);
+  border-radius: var(--radius-burchak);
+}
+#qidiruv { display: block; width: 100%; }
+#qidiruv-natija {
+  min-height: 1.5em;
+  margin: --spacing(1) 0 --spacing(2);
+  color: var(--color-ikkinchi);
+}
+/* Qidiruvga mos bo'lak: rang — tema bilan, kontrast ikkalasida ham */
+mark {
+  border-radius: 0.2em;
+  background: var(--color-belgi);
+  color: var(--color-matn);
+}
+[aria-invalid="true"] { border-color: var(--color-xato); }
+.xato {
+  min-height: 1.5em;
+  margin: --spacing(1) 0 0;
+  color: var(--color-xato);
+}
+#filtrlar { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+/* display: flex hidden atributini bosib ketmasin */
+#teg-takliflari:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: --spacing(2);
+  margin-top: --spacing(2);
+}
+#saralash-qatori {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: --spacing(2);
+  margin: --spacing(2) 0 0;
+}
+#royxat { margin: 0; padding: 0; list-style: none; }
+#royxat li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: --spacing(2);
+  padding-block: --spacing(2);
+  border-bottom: 1px solid var(--color-chegara);
+}
+#royxat label { flex: 1; min-width: 8rem; overflow-wrap: anywhere; }
+#royxat [type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.bajarildi label {
+  color: var(--color-ikkinchi);
+  text-decoration: line-through;
+}
+#hisob { font-weight: bold; }
+textarea {
+  display: block;
+  width: 100%;
+  margin-block: --spacing(1) --spacing(2);
+  padding: --spacing(2);
+  border: 2px solid var(--color-ikkinchi);
+  border-radius: var(--radius-burchak);
+}
+#aloqa {
+  min-height: 1.5em;
+  margin: 0 0 --spacing(2);
+  color: var(--color-ikkinchi);
+}
+dialog {
+  max-width: min(28rem, calc(100% - 2rem));
+  padding: --spacing(4) 1.25rem;
+  border: 1px solid var(--color-chegara);
+  border-radius: var(--radius-katta);
+  background: var(--color-yuza);
+  color: var(--color-matn);
+}
+dialog::backdrop { background: rgb(0 0 0 / 0.5); }
+dialog h2 { margin-top: 0; }
+/* 20/#22: kirish VA chiqish — CSS o'tishi (13/#09 dagi @keyframes faqat
+   kirishni ko'rsatardi: yopilganda oyna darhol yo'qolardi). Yopiq <dialog> —
+   display: none; display va overlay (top layer) "allow-discrete" bilan
+   o'tish oxirigacha kechikadi. @starting-style — ochilishdagi boshlang'ich
+   qiymat (display: none dan keyin birinchi kadr). Faqat opacity va
+   transform — kompozitor (layout yo'q) */
+dialog {
+  opacity: 0;
+  transform: translateY(0.5rem);
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.15s ease-out,
+    overlay 0.15s allow-discrete,
+    display 0.15s allow-discrete;
+}
+dialog[open] { opacity: 1; transform: none; }
+@starting-style {
+  dialog[open] { opacity: 0; transform: translateY(0.5rem); }
+}
+dialog::backdrop {
+  transition:
+    background-color 0.15s,
+    overlay 0.15s allow-discrete,
+    display 0.15s allow-discrete;
+}
+@starting-style {
+  dialog[open]::backdrop { background-color: transparent; }
+}
+#import-zona {
+  margin-inline: -0.5rem;
+  padding-inline: --spacing(2);
+  border: 2px dashed transparent;
+  border-radius: var(--radius-burchak);
+}
+#import-zona.ustida {
+  border-color: var(--color-asosiy);
+  background: var(--color-yuza);
+}
+.izoh { margin: 0; color: var(--color-ikkinchi); }
+#tema-tanlov, #til-tanlov {
+  margin: --spacing(6) 0 0;
+  border: 1px solid var(--color-chegara);
+  border-radius: var(--radius-burchak);
+}
+/* Harakatni kamaytirish so'ralgan: o'tishlar deyarli darhol */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  /* 20/#22: ::backdrop — "*" ga kirmaydi (dialog foni ham o'tadi). ALOHIDA
+     qoida: ro'yxatda (*, ::before, ::after, ::backdrop) bo'lsa, build'dagi
+     CSS optimallashtiruvchi ::backdrop ni jimgina tashlab yubordi (o'lchandi,
+     e2e-20: fon o'tishi reduced-motion'da ham 0.15s qoldi) */
+  ::backdrop {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+/* 18/#02: qidiruv natijasi hali eski (useDeferredValue) — biroz xira.
+   Kechikish bilan: tez javobda miltillamasin */
+#royxat.eskirgan {
+  opacity: 0.6;
+  transition: opacity 0.15s 0.2s;
+}
+@media (prefers-reduced-motion: reduce) {
+  #royxat.eskirgan { transition: none; }
+}
+/* 18/#03: batafsil statistika — disclosure (sarlavha ichida tugma) */
+#batafsil h2 { margin-top: --spacing(4); }
+#batafsil h2 button { font-size: 1rem; font-weight: bold; }
+#batafsil-holat { min-height: 1.5em; margin: 0.25rem 0 0; color: var(--color-ikkinchi); }
+#batafsil table { width: 100%; border-collapse: collapse; }
+#batafsil caption { text-align: start; font-weight: bold; }
+#batafsil th, #batafsil td {
+  padding: --spacing(1) --spacing(2);
+  border-bottom: 1px solid var(--color-chegara);
+  text-align: start;
+}
+#batafsil td { text-align: end; font-variant-numeric: tabular-nums; }
+#batafsil h3 { margin-bottom: --spacing(1); font-size: 1rem; }
+/* 18/#10: e'lon — toast (portal orqali <body> da), oqimdan tashqarida */
+.bildirishnoma {
+  position: fixed;
+  inset-inline: --spacing(4);
+  bottom: --spacing(4);
+  z-index: 1;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: --spacing(3) --spacing(4);
+  border: 1px solid var(--color-chegara);
+  border-radius: var(--radius-burchak);
+  background: var(--color-yuza);
+  color: var(--color-matn);
+  box-shadow: var(--shadow-soya);
+  /* 20/#22: + translate — pastdan chiqadi (transform oilasi, kompozitor) */
+  transition: opacity 0.2s, translate 0.2s;
+  /* Faqat xabar (tugmasi yo'q): ostidagi qatorni bosishga xalaqit
+     bermasin — 18/#10 da e2e topdi: toast o'chirish tugmasini yopib qo'ydi */
+  pointer-events: none;
+}
+/* Bo'sh — ko'rinmaydi, lekin jonli hudud sifatida joyida (hidden yoki
+   display: none bo'lsa, ekran o'quvchi keyingi matnni o'qimasligi mumkin) */
+.bildirishnoma:empty { opacity: 0; translate: 0 0.5rem; }
+/* «Qo'shilmoqda…» uzunroq — kenglik doim bir xil: maydon siljimasin */
+#qoshish-tugma { min-width: 9.5em; }
+/* 18/#23: virtual ro'yxatdagi bo'sh joy (ko'rinmaydigan qatorlar o'rni) */
+#royxat li.joy { padding: 0; border: 0; }
+/* 18/#26 menyu (.menyu, .menyu-royxat, .menyu-band) — 20/#03 dan
+   ui/dropdown-menu.tsx da Tailwind sinflari bilan */
+/* 18/#38: teg ulushi — kenglik CSS o'zgaruvchisidan (style prop, CSSOM) */
+#batafsil .ulush {
+  display: block;
+  height: --spacing(1);
+  margin-top: --spacing(1);
+  border-radius: --spacing(1);
+  background: linear-gradient(
+    to right,
+    var(--color-asosiy) var(--ulush, 0%),
+    var(--color-chegara) var(--ulush, 0%)
+  );
+}
+/* 18/#40: skip link — fokusda paydo bo'ladi (oqimdan tashqarida: CLS yo'q) */
+.otish {
+  position: absolute;
+  top: --spacing(2);
+  left: --spacing(2);
+  z-index: 3;
+  padding: --spacing(2) --spacing(3);
+  border-radius: var(--radius-burchak);
+  background: var(--color-asosiy);
+  color: var(--color-asosiy-ustida);
+  transform: translateY(-200%);
+}
+.otish:focus { transform: none; }
+/* 18/#42: kirish formasi va foydalanuvchi menyusi */
+#kirish { margin-top: --spacing(4); }
+#kirish-ism {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--spacing-bosish);
+  padding: --spacing(2);
+  border: 2px solid var(--color-ikkinchi);
+  border-radius: var(--radius-burchak);
+}
+#foydalanuvchi {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: --spacing(2);
+}
+/* 19/#02: sahifalar menyusi (layout). Joriy sahifa — aria-current
+   (NavLink qo'yadi), alohida class kerak emas */
+.bolimlar ul,
+.ichki-bolimlar ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: --spacing(1) --spacing(3);
+  margin: 0 0 --spacing(2);
+  padding: 0;
+  list-style: none;
+}
+.bolimlar a,
+.ichki-bolimlar a {
+  display: inline-block;
+  min-height: var(--spacing-bosish);
+  padding: --spacing(2) --spacing(1);
+  color: var(--color-asosiy);
+}
+.bolimlar a[aria-current="page"],
+.ichki-bolimlar a[aria-current="page"] {
+  font-weight: 700;
+  text-decoration-thickness: 3px;
+}
+.raqamlar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: --spacing(3);
+  margin: 0;
+}
+.raqamlar dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+/* 19/#03: qatordagi «Batafsil» havolasi va vazifa sahifasi */
+#royxat .batafsil {
+  align-self: center;
+  padding: --spacing(1);
+  color: var(--color-asosiy);
+}
+.vazifa-malumoti {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: --spacing(1) --spacing(3);
+}
+.vazifa-malumoti dd { margin: 0; }
+/* 19/#10: non yo'li va sahifa o'tishi (View Transitions) */
+.non-yoli ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: --spacing(1);
+  margin: 0 0 --spacing(2);
+  padding: 0;
+  list-style: none;
+}
+.non-yoli li + li::before {
+  content: "/";
+  margin-inline-end: --spacing(1);
+  color: var(--color-ikkinchi);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.12s;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
+  }
+}
+/* 19/#22: ixcham ro'yxat (Sozlamalar) */
+#royxat.ixcham li {
+  padding-block: --spacing(1);
+}
+/* 19/#32: tahrir formasi va almashtirgich (role="switch") */
+#tahrir-forma input:not([type]) {
+  width: 100%;
+  min-height: var(--spacing-bosish);
+  padding: --spacing(2);
+  border: 2px solid var(--color-ikkinchi);
+  border-radius: var(--radius-burchak);
+}
+#tahrir-forma [aria-invalid="true"] { border-color: var(--color-xato); }
+.almashtirgich {
+  min-height: var(--spacing-bosish);
+  padding: --spacing(2) --spacing(3);
+  border: 2px solid var(--color-ikkinchi);
+  border-radius: var(--radius-katta);
+  background: transparent;
+  color: inherit;
+}
+.almashtirgich::before { content: "○ "; }
+.almashtirgich[aria-checked="true"] {
+  border-color: var(--color-asosiy);
+  font-weight: 700;
+}
+.almashtirgich[aria-checked="true"]::before { content: "● "; }
+/* 19/#33: ko'p qadamli forma */
+.usta-qadamlari {
+  display: flex;
+  gap: --spacing(3);
+  padding-inline-start: --spacing(4);
+}
+.usta-qadamlari [aria-current="step"] { font-weight: 700; }
+#usta fieldset {
+  margin: 0 0 --spacing(2);
+  border: 1px solid var(--color-chegara);
+  border-radius: var(--radius-burchak);
+}
+#usta input {
+  min-height: var(--spacing-bosish);
+  padding: --spacing(2);
+  border: 2px solid var(--color-ikkinchi);
+  border-radius: var(--radius-burchak);
+}
+#usta [aria-invalid="true"] { border-color: var(--color-xato); }
+#usta-qadamlar li { display: flex; flex-wrap: wrap; gap: --spacing(2); align-items: center; }
+/* 19/#35: combobox — ro'yxat maydon ostida */
+.combobox { position: relative; display: inline-block; }
+.combobox [role="listbox"] {
+  position: absolute;
+  inset-inline-start: 0;
+  z-index: 2;
+  min-width: 100%;
+  margin: 0;
+  padding: --spacing(1) 0;
+  list-style: none;
+  border: 1px solid var(--color-chegara);
+  border-radius: var(--radius-burchak);
+  background: var(--color-fon);
+  box-shadow: var(--shadow-soya);
+}
+.combobox [role="option"] { padding: --spacing(1) --spacing(3); cursor: pointer; }
+.combobox [role="option"][aria-selected="true"] {
+  background: var(--color-asosiy);
+  color: var(--color-asosiy-ustida);
+}
+/* 19/#36: profil rasmi — sudrab tashlash zonasi, avatar */
+#rasm-zona {
+  padding: --spacing(3);
+  border: 2px dashed var(--color-ikkinchi);
+  border-radius: var(--radius-burchak);
+}
+#rasm-zona.ustida { border-color: var(--color-asosiy); }
+#profil-rasmi img { border-radius: var(--radius-burchak); object-fit: cover; }
+.avatar {
+  margin-inline-end: --spacing(1);
+  border-radius: 50%;
+  vertical-align: middle;
+  object-fit: cover;
+}
+/* 21/#04: teglar grafigi (o'z SVG) — ranglar tokenlardan; qolgan qismi
+   ikkinchi rangda: grafik elementi fonga ≥ 3:1 (WCAG 1.4.11; chegara rangi
+   — 1.4:1, o'tmaydi) */
+#teglar-grafigi { margin: --spacing(4) 0 0; max-inline-size: 36rem; }
+#teglar-grafigi svg { display: block; inline-size: 100%; block-size: auto; }
+#teglar-grafigi text { fill: var(--color-matn); font-size: 12px; dominant-baseline: central; }
+#teglar-grafigi .grafik-yorliq { text-anchor: end; }
+.grafik-bajarildi { fill: var(--color-asosiy); }
+.grafik-qolgan { fill: var(--color-ikkinchi); }
+#teglar-grafigi figcaption { color: var(--color-ikkinchi); font-size: 0.875rem; }
+#teglar-grafigi figcaption span {
+  display: inline-block; inline-size: 0.75em; block-size: 0.75em;
+  vertical-align: baseline;
+}
+.belgi-bajarildi { background: var(--color-asosiy); }
+.belgi-qolgan { background: var(--color-ikkinchi); }
+/* 21/#08: vazifa izohi */
+#vazifa-izohi { margin-block-start: --spacing(6); }
+#vazifa-izohi textarea { display: block; inline-size: 100%; font: inherit; }
+.izoh-xom { white-space: pre-wrap; }
+.izoh-matni :where(p, ul, ol, pre) { margin-block: --spacing(2); }
+.izoh-matni code { font-family: ui-monospace, monospace; }
+/* 21/#12: profil rasmini kesish — kvadrat maydon, rasm transform bilan */
+.kesish-maydon {
+  position: relative; inline-size: 256px; block-size: 256px;
+  overflow: hidden; border-radius: 50%; touch-action: none; cursor: grab;
+  background: var(--color-yuza); outline: 1px solid var(--color-chegara);
+}
+.kesish-maydon img {
+  position: absolute; inset-block-start: 0; inset-inline-start: 0;
+  max-inline-size: none; transform-origin: 0 0; user-select: none;
+}
+/* 21/#16: ulashish — QR kod yorug' fonda (skaner qorong'i temada ham o'qisin) */
+#ulashish { margin-block-start: --spacing(6); }
+#ulashish summary { cursor: pointer; min-block-size: var(--spacing-bosish, 2.75rem); }
+#qr-kod { display: block; background: #fff; }
+#ulashish-havola { overflow-wrap: anywhere; }
+/* 21/#26: AI chat */
+#chat { list-style: none; padding: 0; display: grid; gap: --spacing(3); }
+#chat li { padding: --spacing(2) --spacing(3); border-radius: var(--radius-burchak); border: 1px solid var(--color-chegara); }
+#chat .chat-foydalanuvchi { background: var(--color-yuza); justify-self: end; max-inline-size: 85%; }
+#chat li[aria-busy="true"] { border-style: dashed; }

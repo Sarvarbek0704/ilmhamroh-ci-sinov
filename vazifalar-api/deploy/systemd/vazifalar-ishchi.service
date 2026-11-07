@@ -1,0 +1,47 @@
+# /etc/systemd/system/vazifalar-ishchi.service — 33-qism #07: fon ishchisi (API bilan bir kod, boshqa kirish nuqtasi) (Docker'siz, "yalang" VPS).
+# O'rnatish: sudo cp deploy/systemd/vazifalar-ishchi.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now vazifalar-ishchi
+# Kod — /opt/vazifalar-api (dist/ + node_modules prod), sozlama — /etc/vazifalar-api/env (root:vazifalar 640; git'da EMAS). Loglar — journald (stdout, Pino JSON).
+[Unit]
+Description=vazifalar-api ishchisi (outbox relay, BullMQ, cron)
+Documentation=https://github.com/login/vazifalar-api
+# tarmoq haqiqatan tayyor bo'lgandan keyin (DB boshqa serverda bo'lishi mumkin)
+Wants=network-online.target
+After=network-online.target
+# 5 daqiqada 5 martadan ko'p yiqilsa — qayta urinmaydi (cheksiz restart sikli logni to'ldirmasin)
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=exec
+User=vazifalar
+Group=vazifalar
+WorkingDirectory=/opt/vazifalar-api
+EnvironmentFile=/etc/vazifalar-api/env
+EnvironmentFile=/etc/vazifalar-api/ishchi.env
+ExecStart=/usr/bin/node dist/ishchi.js
+# Yiqilsa (exit != 0, signal) — 2 s dan keyin qayta; `systemctl stop` (exit 0) — qayta ishga tushmaydi
+Restart=on-failure
+RestartSec=2
+# SIGTERM → ilova o'zi drain qiladi (YOPISH_KECHIKISH_MS + 10 s ulanishlarni kutish); shundan uzoq bo'lsa SIGKILL. 33 #07 o'lchovi bilan
+KillSignal=SIGTERM
+TimeoutStopSec=30
+# Himoya (systemd-analyze security bilan o'lchandi — 33 #07): ilova faqat o'qiydi, yozish — hech qayerga (fayllar S3'da, log — journald)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+# xotira cheklovi: oshsa — OOM shu xizmat ichida (butun server emas)
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

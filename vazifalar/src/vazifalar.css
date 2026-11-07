@@ -1,0 +1,78 @@
+/* vazifalar.css — 20/#02: Tailwind CSS v4 (@tailwindcss/vite).
+   Qatlamlar tartibi: theme (tokenlar) → base (asos.css — mavjud qoidalar)
+   → components → utilities. Keyingi qatlam oldingisidan ustun, shuning
+   uchun komponentdagi Tailwind sinfi asos.css dagi teg/id qoidasini bosib
+   ketadi (qatlamsiz CSS esa hamma qatlamdan ustun bo'lardi — eski
+   `button { ... }` qoidasi har bir utilitani yengardi).
+   Preflight (Tailwind'ning reset'i) ATAYLAB ulanmagan: u h1/h2 o'lchami,
+   ro'yxat belgilari, chegaralarni nolga tushirib, butun ilova ko'rinishini
+   o'zgartirardi. Shuning uchun "tailwindcss" emas — theme va utilities
+   alohida (Tailwind hujjatidagi "preflight'siz" usul) */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+/* source("./") — sinflar faqat src/ dan qidiriladi (testlar, skriptlar
+   va README dagi so'zlar CSS'ga tushmasin) */
+@import "tailwindcss/utilities.css" layer(utilities) source("./");
+@import "./asos.css" layer(base);
+
+/* Dizayn tokenlari (18/#33 dagi :root o'zgaruvchilari) — @theme da.
+   Nom = Tailwind nomlar fazosi + bizning nom: --color-asosiy → bg-asosiy,
+   text-asosiy, border-asosiy; --radius-burchak → rounded-burchak;
+   --spacing-bosish → min-h-bosish; --shadow-soya → shadow-soya. Oraliq —
+   Tailwind'ning --spacing (0.25rem): p-2 = 0.5rem (eski --joy-2).
+   --color-*: initial — standart palitra (red-500, slate-…) o'chiriladi:
+   faqat ilova ranglari, tasodifiy "bg-blue-600" ishlamaydi */
+@theme {
+  --color-*: initial;
+  /* Zaxira: light-dark() ni bilmaydigan brauzer (Chrome < 123) — yorug' */
+  --color-matn: #1f2a24;
+  --color-fon: #f7faf8;
+  --color-yuza: #fff;
+  --color-asosiy: #1f6f4a;
+  --color-asosiy-ustida: #fff;
+  --color-chegara: #c9d6cf;
+  --color-ikkinchi: #5b6660;
+  --color-xato: #b3261e;
+  --color-belgi: #ffe08a;
+  --radius-burchak: 0.5rem;
+  --radius-katta: 0.75rem;
+  /* Bosiladigan element balandligi: 44 px — WCAG 2.5.5 (tegish nishoni) */
+  --spacing-bosish: 2.75rem;
+  --shadow-soya: 0 0.25rem 1rem rgb(0 0 0 / 0.2);
+  /* 20/#12: yuklanish ko'rsatkichi 300 ms kechikib chiqadi (animate-kechikib):
+     tez javobda miltillamaydi. Davomiylik 0 — faqat kechikish, shuning
+     uchun prefers-reduced-motion'da ham to'g'ri ishlaydi */
+  --animate-kechikib: kechikib-chiqish 0s 300ms both;
+  @keyframes kechikib-chiqish {
+    from { visibility: hidden; }
+  }
+  /* 20/#22: menyu va tooltip ochilishi — qisqa (120 ms), faqat opacity va
+     scale. Chiqish animatsiyasi yo'q: Radix yopilganda elementni darhol
+     olib tashlaydi (animatsiya bo'lsa, animationend kutadi) */
+  --animate-kirish: kirish 0.12s ease-out;
+  @keyframes kirish {
+    from { opacity: 0; scale: 0.96; }
+  }
+}
+
+/* Rejimni color-scheme hal qiladi: tizim yoki data-tema (tema.js).
+   @theme ichida @supports bo'lmaydi — qiymatlar shu yerda almashtiriladi
+   (base qatlami theme'dan keyin — ustun) */
+@layer base {
+  @supports (color: light-dark(white, black)) {
+    :root {
+      color-scheme: light dark;
+      --color-matn: light-dark(#1f2a24, #e6efe9);
+      --color-fon: light-dark(#f7faf8, #14201a);
+      --color-yuza: light-dark(#fff, #1d2b24);
+      --color-asosiy: light-dark(#1f6f4a, #7fd1a5);
+      --color-asosiy-ustida: light-dark(#fff, #0d1a13);
+      --color-chegara: light-dark(#c9d6cf, #3a4d43);
+      --color-ikkinchi: light-dark(#5b6660, #a9b8b0);
+      --color-xato: light-dark(#b3261e, #ffb4ab);
+      --color-belgi: light-dark(#ffe08a, #5c4a00);
+    }
+    :root[data-tema="yorug"] { color-scheme: light; }
+    :root[data-tema="qorongi"] { color-scheme: dark; }
+  }
+}

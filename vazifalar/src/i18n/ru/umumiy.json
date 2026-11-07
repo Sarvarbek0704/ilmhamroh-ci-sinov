@@ -1,0 +1,44 @@
+{
+  "ilova": "Задачи",
+  "sahifaNomi": "{{sahifa}} — Задачи",
+  "otish": {
+    "royxat": "Перейти к списку",
+    "asosiy": "Перейти к основному содержимому"
+  },
+  "bolimlar": {
+    "nomi": "Разделы",
+    "royxat": "Список",
+    "statistika": "Статистика",
+    "sozlamalar": "Настройки",
+    "yordamchi": "Помощник"
+  },
+  "hisob": {
+    "matn": "{{qoldi}}, {{bajarildi}}",
+    "qoldi_one": "Осталась {{count}} задача",
+    "qoldi_few": "Осталось {{count}} задачи",
+    "qoldi_many": "Осталось {{count}} задач",
+    "qoldi_other": "Осталось {{count}} задачи",
+    "bajarildi_one": "{{count}} выполнена",
+    "bajarildi_few": "{{count}} выполнены",
+    "bajarildi_many": "{{count}} выполнено",
+    "bajarildi_other": "{{count}} выполнено"
+  },
+  "statistika": {
+    "jami": "Всего",
+    "qoldi": "Осталось",
+    "bajarildi": "Выполнено",
+    "foiz": "{{bajarildi}} ({{ulush, number(style: percent)}})",
+    "tegYoq": "Тегов нет.",
+    "teglar": "Теги: {{royxat}}",
+    "vaqt": "Состояние на {{vaqt, sana}}"
+  },
+  "topilmadi": {
+    "sarlavha": "Страница не найдена",
+    "matn": "По адресу «{{yol}}» страницы нет.",
+    "qaytish": "Вернуться к списку"
+  },
+  "yangilanish": {
+    "matn": "Доступна новая версия.",
+    "tugma": "Обновить"
+  }
+}

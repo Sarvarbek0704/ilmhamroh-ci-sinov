@@ -1,0 +1,8 @@
+# /etc/sudoers.d/90-deploy — 33-qism #03/#16: deploy foydalanuvchisi uchun MINIMAL ruxsat ro'yxati (bosh muharrir qarori, 2026-11-06).
+# Faqat darslarda kerak bo'lgan aniq buyruqlar; argumentlar to'liq yozilgan (boshqa xizmat nomi bilan ishlamaydi). Tekshirish: visudo -cf <fayl>
+# ANTI-NAQSH: `deploy ALL=(ALL) NOPASSWD:ALL` — kalit o'g'irlansa butun server.
+Cmnd_Alias VAZIFALAR_XIZMAT = /usr/bin/systemctl restart vazifalar-api, /usr/bin/systemctl reload vazifalar-api, \
+                              /usr/bin/systemctl status vazifalar-api, /usr/bin/systemctl restart vazifalar-ishchi, \
+                              /usr/bin/systemctl status vazifalar-ishchi, /usr/bin/systemctl start vazifalar-zaxira.service
+Cmnd_Alias VAZIFALAR_NGINX = /usr/sbin/nginx -t, /usr/bin/systemctl reload nginx
+deploy ALL=(root) NOPASSWD: VAZIFALAR_XIZMAT, VAZIFALAR_NGINX

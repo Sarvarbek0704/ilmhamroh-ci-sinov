@@ -1,0 +1,6 @@
+# Qator oxiri — hamma joyda LF (16/#44). Windows'dagi Git sukut bo'yicha
+# (core.autocrlf=true) faylni CRLF bilan ochadi: Prettier "Code style
+# issues found in 22 files" deydi, diff'lar har qatorda o'zgargandek ko'rinadi
+* text=auto eol=lf
+# Rasm — matn emas: qator oxiriga tegilmaydi
+*.png binary

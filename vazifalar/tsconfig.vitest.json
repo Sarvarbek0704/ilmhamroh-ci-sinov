@@ -1,0 +1,12 @@
+{
+  // 22/#08: vitest.config.ts alohida — u @vitest/browser-playwright ni
+  // import qiladi, Playwright turlari esa DOM'ga (HTMLElement, Node)
+  // tayanadi. tsconfig.node.json da DOM ataylab yo'q (16/#42) — uni
+  // buzmaslik uchun faqat shu fayl DOM lib bilan tekshiriladi
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",
+    "lib": ["es2024", "DOM"]
+  },
+  "include": ["vitest.config.ts"]
+}

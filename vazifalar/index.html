@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <!-- CSP: faqat o'z fayllarimiz va «Bahor» API'si. HTML ichidagi
+       skript va on...= atributlari ishlamaydi. frame-ancestors bu
+       yerda ishlamaydi — u faqat HTTP sarlavhada (TEXNIK-QARZ) -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self';
+                 style-src 'self'; img-src 'self' blob:;
+                 connect-src 'self' https://ilmhamroh.uz http://127.0.0.1:4150;
+                 manifest-src 'self'; worker-src 'self';
+                 object-src 'none'; base-uri 'none';
+                 form-action 'self';
+                 require-trusted-types-for 'script';
+                 trusted-types vazifalar">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f7faf8">
+  <title>Vazifalar — kichik vazifalar ro'yxati</title>
+  <meta name="description"
+        content="React'da yozilgan vazifalar ro'yxati.">
+  <!-- 21/#32: havola ko'rinishi (Telegram, WhatsApp, Facebook) JS'ni
+       bajarmaydi — faqat shu statik teglar o'qiladi -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Vazifalar">
+  <meta property="og:description"
+        content="Kichik vazifalar ro'yxati: oflayn ishlaydi, o'zbek, rus va ingliz tilida.">
+  <meta property="og:locale" content="uz_UZ">
+  <!-- 19/#02: %BASE_URL% — Vite build'da base bilan almashtiradi
+       ("/vazifalar/"): sahifa /vazifalar/vazifa/2 dan ochilsa ham fayl
+       ilova papkasidan so'raladi (nisbiy yo'l — /vazifalar/vazifa/...) -->
+  <link rel="manifest" href="%BASE_URL%manifest.webmanifest">
+  <link rel="icon" href="%BASE_URL%assets/ikonlar/ikon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="%BASE_URL%assets/ikonlar/ikon-180.png">
+  <script src="%BASE_URL%assets/js/tema.js"></script>
+  <link rel="stylesheet" href="src/vazifalar.css">
+  <script type="module" src="src/main.tsx"
+          blocking="render"></script>
+</head>
+<body>
+  <main>
+    <h1>Vazifalar</h1>
+    <!-- React ildizi: src/main.tsx → router (19/#02) → sahifalar -->
+    <div id="ilova"></div>
+  </main>
+</body>
+</html>
