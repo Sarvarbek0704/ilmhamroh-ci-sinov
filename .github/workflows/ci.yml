@@ -6,9 +6,9 @@ name: CI
 on:
   push:
     branches: [main]
-    paths: ["vazifalar-api/**", "vazifalar/**", "sql/**", ".github/workflows/ci.yml"]
+    paths: ["vazifalar-api/**", "vazifalar/**", "sql/**", ".github/workflows/ci.yml", ".github/actions/**"]
   pull_request:
-    paths: ["vazifalar-api/**", "vazifalar/**", "sql/**", ".github/workflows/ci.yml"]
+    paths: ["vazifalar-api/**", "vazifalar/**", "sql/**", ".github/workflows/ci.yml", ".github/actions/**"]
   workflow_dispatch:
 
 # #03: GITHUB_TOKEN — eng kam ruxsat (sukut: repo sozlamasiga bog'liq). Job o'ziga kerak bo'lsa — job darajasida kengaytiradi
@@ -17,6 +17,11 @@ permissions:
 
 env:
   HUSKY: 0           # web: npm ci dagi "prepare": "husky" CI'da kerak emas
+
+# #04: bir branch/PR'ga ketma-ket push — eski yugurish BEKOR qilinadi (natijasi baribir eskirgan; daqiqa tejaladi)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   api:
@@ -65,10 +70,9 @@ jobs:
       KANON_TLS: /tmp/vazifalar-tls
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/node-tayyorla
         with:
-          node-version: 24
-      - run: npm ci --no-audit --no-fund
+          papka: vazifalar-api
       - name: Sinov TLS sertifikati (bildirishnoma.test)
         run: |
           mkdir -p "$KANON_TLS"
@@ -82,13 +86,19 @@ jobs:
             DATABASE_URL=postgres://postgres@127.0.0.1:5432/$b npx prisma migrate deploy
           done
           psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE vazifalar"
-          for f in $(ls ../sql/*.sql | sort); do psql -h 127.0.0.1 -U postgres -d vazifalar -q -1 -v ON_ERROR_STOP=1 -f "$f" > /dev/null; done
+          for f in ../sql/*.sql; do psql -h 127.0.0.1 -U postgres -d vazifalar -q -1 -v ON_ERROR_STOP=1 -f "$f" > /dev/null; done
           echo "namuna: $(psql -h 127.0.0.1 -U postgres -d vazifalar -Atc 'SELECT count(*) FROM foydalanuvchilar') foydalanuvchi"
       - run: npm run tip
       - run: npm run lint
       # 2 vCPU runner — DB testlari parallel yukda flaky bo'lgan (31 #34)
       - run: npx vitest run --maxWorkers=2
       - run: npm run build
+      # #04: artefakt — job'lar orasida fayl uzatish (keyingi job yoki odam yuklab oladi); saqlash muddati qisqa (joy limiti)
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: api-dist
+          path: vazifalar-api/dist/
+          retention-days: 3
       - name: Migratsiyalar ↔ schema.prisma (drift bo'lmasin)
         run: DATABASE_URL=postgres://postgres@127.0.0.1:5432/vazifalar_test npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
       - name: Bog'liqliklar auditi (prod)
@@ -103,15 +113,30 @@ jobs:
         working-directory: vazifalar
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/node-tayyorla
         with:
-          node-version-file: vazifalar/.nvmrc
-      - run: npm ci --no-audit --no-fund
+          papka: vazifalar
       - run: npm run check
       - run: npm run build
         env:
           VITE_API_URL: /v1
           VITE_AUTH_URL: /v1/auth
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-dist
+          path: vazifalar/dist/
+          retention-days: 3
+
+  # #04: needs + artefaktni boshqa job'da olish (masalan, deploy job'i build'ni qayta qilmaydi)
+  artefakt:
+    needs: [api, web]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: olingan
+      - run: du -sh olingan/* && find olingan -type f | wc -l
 
   # #02: matrix — bir xil job ikki arxitekturada (x64 va arm64 runner; ochiq repoda ikkalasi bepul). Tez job (faqat tip) — daqiqa tejaladi
   arxitektura:
@@ -127,9 +152,8 @@ jobs:
         working-directory: vazifalar-api
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/node-tayyorla
         with:
-          node-version: 24
+          papka: vazifalar-api
       - run: echo "arch=$(uname -m) cpu=$(nproc) node=$(node -v) mem=$(free -m | awk '/Mem/{print $2}')MB"
-      - run: npm ci --no-audit --no-fund
       - run: npm run tip

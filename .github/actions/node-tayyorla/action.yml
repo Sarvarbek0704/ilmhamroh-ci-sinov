@@ -1,0 +1,25 @@
+# .github/actions/node-tayyorla — 34-qism #04 (O-46): composite action — uch job'da takrorlangan "Node + npm keshi + npm ci" bitta joyda.
+#   Ishlatish (checkout'dan keyin):  - uses: ./.github/actions/node-tayyorla
+#                                      with: { papka: vazifalar-api }
+#   Composite = qadamlar to'plami (job emas): o'z runner'i, services, permissions yo'q. Butun job'ni qayta ishlatish — reusable workflow (_image.yml).
+name: Node tayyorla
+description: setup-node (npm keshi bilan) + npm ci
+inputs:
+  papka:
+    description: package-lock.json joylashgan papka
+    required: true
+  node-version:
+    description: Node versiyasi
+    default: "24"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: ${{ inputs.papka }}/package-lock.json
+    - name: npm ci
+      shell: bash
+      working-directory: ${{ inputs.papka }}
+      run: npm ci --no-audit --no-fund
