@@ -1,0 +1,23 @@
+# .github/workflows/muhit.yml — 34-qism #03 (O-45): environments — tasdiqlash (required reviewer) va branch siyosati namoyishi. Faqat qo'lda.
+name: Muhit
+
+on:
+  workflow_dispatch:
+    inputs:
+      muhit:
+        type: choice
+        options: [tasdiqli, production]
+        default: tasdiqli
+
+permissions: {}
+
+jobs:
+  deploy-sinov:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: ${{ inputs.muhit }}
+    steps:
+      - env:
+          MUHIT: ${{ inputs.muhit }}
+          REF: ${{ github.ref_name }}
+        run: echo "muhit=$MUHIT branch=$REF — ruxsat berildi $(date -u +%T)"
