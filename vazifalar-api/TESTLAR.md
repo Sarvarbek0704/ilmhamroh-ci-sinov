@@ -57,3 +57,5 @@ Backend'ning qiymati — HTTP shartnomasi (status, sarlavha, Problem Details) va
 - `test/asinxron.test.ts` — vaqtga bog'liq kod soxta soat bilan (`vi.useFakeTimers`, `advanceTimersByTimeAsync`).
 - `test/shartnoma.test.ts` — OpenAPI snapshot (`docs/openapi-snapshot.json`; ataylab o'zgartirganda `SHARTNOMA_YANGILA=1`) va iste'molchi shartnomasi (frontend kutgan javob shakllari).
 - `npm run test:aralash` — testlar tasodifiy tartibda (bir-biriga bog'liq testlarni topish). CI — `.github/workflows/ci.yml` (qo'lda ishga tushadi; lokal `npm run check` bilan bir xil qadamlar).
+
+<!-- 34 #07: blue-green o'lchovi uchun yangi image (B2) -->
