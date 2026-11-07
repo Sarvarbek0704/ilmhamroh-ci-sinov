@@ -1,0 +1,131 @@
+# .github/workflows/ci.yml — 34-qism #02 (O-44): har push/PR'da tekshiruv — lokal `npm run check` bilan AYNAN bir xil qadamlar.
+#   Monorepo (sinov repo): vazifalar-api/ (backend) va vazifalar/ (web). Har job faqat o'z papkasi o'zgarganda (paths) — hujjat PR'lari daqiqa yemaydi.
+#   Begona action'lar SHA bilan qotirilgan (#03): teg ko'chishi mumkin, commit SHA — yo'q. Izohdagi teg — o'qish uchun.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["vazifalar-api/**", "vazifalar/**", ".github/workflows/ci.yml"]
+  pull_request:
+    paths: ["vazifalar-api/**", "vazifalar/**", ".github/workflows/ci.yml"]
+  workflow_dispatch:
+
+# #03: GITHUB_TOKEN — eng kam ruxsat (sukut: repo sozlamasiga bog'liq). Job o'ziga kerak bo'lsa — job darajasida kengaytiradi
+permissions:
+  contents: read
+
+env:
+  HUSKY: 0           # web: npm ci dagi "prepare": "husky" CI'da kerak emas
+
+jobs:
+  api:
+    name: api (tip, lint, test, build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: vazifalar-api
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.7-pg18-trixie
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:8.8.4
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 20
+      # 33 BACKLOG 2: S3 (RustFS) va pochta (Mailpit) — Actions'da birinchi haqiqiy yugurish. `services` da `command` yo'q — RustFS sukut CMD bilan
+      s3:
+        image: rustfs/rustfs:1.0.4
+        env:
+          RUSTFS_ACCESS_KEY: ci-sinov-kalit
+          RUSTFS_SECRET_KEY: ci-sinov-siri-faqat-test
+        ports: ["9000:9000"]
+      mailpit:
+        image: axllent/mailpit:v1.33.0
+        ports: ["1025:1025", "8025:8025"]
+    env:
+      TEST_DATABASE_URL: postgres://postgres@127.0.0.1:5432/vazifalar_test
+      TEST_PRISMA_DATABASE_URL: postgres://postgres@127.0.0.1:5432/vazifalar_test_prisma
+      TEST_AUTH_DATABASE_URL: postgres://postgres@127.0.0.1:5432/vazifalar_test_auth
+      TEST_NAMUNA_DATABASE_URL: postgres://postgres@127.0.0.1:5432/vazifalar
+      TEST_REDIS_URL: redis://127.0.0.1:6379
+      # sinov qiymatlari — sir EMAS (faqat shu job ichidagi vaqtinchalik konteyner)
+      S3_ENDPOINT: http://127.0.0.1:9000
+      S3_REGION: us-east-1
+      S3_KALIT: ci-sinov-kalit
+      S3_SIR: ci-sinov-siri-faqat-test
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: 1025
+      MAILPIT_API: http://127.0.0.1:8025
+      KANON_TLS: /tmp/vazifalar-tls
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - name: Sinov TLS sertifikati (bildirishnoma.test)
+        run: |
+          mkdir -p "$KANON_TLS"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 2 -subj "/CN=127.0.0.1" -addext "subjectAltName=IP:127.0.0.1" -keyout "$KANON_TLS/kalit.pem" -out "$KANON_TLS/sert.pem"
+      - name: Test bazalari (Prisma migratsiyalari) va namuna
+        run: |
+          for b in vazifalar_test vazifalar_test_prisma vazifalar_test_auth vazifalar; do
+            psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE $b"
+            DATABASE_URL=postgres://postgres@127.0.0.1:5432/$b npx prisma migrate deploy
+          done
+          DATABASE_URL=postgres://postgres@127.0.0.1:5432/vazifalar npm run db:seed
+      - run: npm run tip
+      - run: npm run lint
+      # 2 vCPU runner — DB testlari parallel yukda flaky bo'lgan (31 #34)
+      - run: npx vitest run --maxWorkers=2
+      - run: npm run build
+      - name: Migratsiyalar ↔ schema.prisma (drift bo'lmasin)
+        run: DATABASE_URL=postgres://postgres@127.0.0.1:5432/vazifalar_test npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+      - name: Bog'liqliklar auditi (prod)
+        run: npm audit --omit=dev --audit-level=high
+
+  web:
+    name: web (format, lint, tip, test, build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: vazifalar
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: vazifalar/.nvmrc
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm run build
+        env:
+          VITE_API_URL: /v1
+          VITE_AUTH_URL: /v1/auth
+
+  # #02: matrix — bir xil job ikki arxitekturada (x64 va arm64 runner; ochiq repoda ikkalasi bepul). Tez job (faqat tip) — daqiqa tejaladi
+  arxitektura:
+    name: tip (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: vazifalar-api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: echo "arch=$(uname -m) cpu=$(nproc) node=$(node -v) mem=$(free -m | awk '/Mem/{print $2}')MB"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run tip
