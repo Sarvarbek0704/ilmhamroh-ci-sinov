@@ -59,3 +59,4 @@ Backend'ning qiymati — HTTP shartnomasi (status, sarlavha, Problem Details) va
 - `npm run test:aralash` — testlar tasodifiy tartibda (bir-biriga bog'liq testlarni topish). CI — `.github/workflows/ci.yml` (qo'lda ishga tushadi; lokal `npm run check` bilan bir xil qadamlar).
 
 <!-- 34 #04: concurrency sinovi (B) -->
+<!-- 34 #04: concurrency sinovi (C) -->
