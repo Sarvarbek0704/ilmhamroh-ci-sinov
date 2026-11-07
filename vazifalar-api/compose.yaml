@@ -5,7 +5,7 @@
 name: vazifalar
 
 x-api: &api
-  image: ${API_IMAGE:-vazifalar-api:4.1.0}
+  image: ${API_IMAGE:-vazifalar-api:4.1.1}
   build:
     context: .
   env_file: .env

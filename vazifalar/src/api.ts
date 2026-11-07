@@ -237,7 +237,10 @@ export function apiKlient({
   return {
     royxat: async (sozlama?: SorovSozlamasi): Promise<ServerRoyxati> =>
       // API sahifalaydi (sukut 20) — butun ro'yxat uchun maksimal sahifa
-      shartnoma(serverRoyxatiSxemasi, await yubor(`${manzil}?limit=100`, sozlama)),
+      shartnoma(
+        serverRoyxatiSxemasi,
+        await yubor(`${manzil}?limit=100`, sozlama),
+      ),
     qosh: async (
       matn: string,
       sozlama?: SorovSozlamasi,

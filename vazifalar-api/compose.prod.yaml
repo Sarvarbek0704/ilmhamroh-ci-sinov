@@ -6,11 +6,20 @@ x-log: &log
   logging:
     driver: json-file
     options: { max-size: "10m", max-file: "3" }   # sukut — cheksiz (disk to'ladi — 33 #35)
+# 34 #01 (33 BACKLOG): Node konteynerlari qattiqlashtirilgan — fayl tizimi faqat o'qish (ilova yozmaydi: fayllar S3'da, log stdout; /tmp — xotirada),
+#   hamma Linux capability olib tashlangan (Node 3000 portda — NET_BIND_SERVICE ham kerak emas), setuid orqali imtiyoz oshirish yopiq.
+#   33 #36 da `docker run --read-only --cap-drop ALL --security-opt no-new-privileges` bilan health 200 o'lchangan — endi Compose'da.
+x-qattiq: &qattiq
+  read_only: true
+  tmpfs: ["/tmp:size=64m"]
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
 
 services:
   db:
     <<: *log
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]   # 34 #01: entrypoint root → gosu/setpriv bilan postgres/redis'ga TUSHADI (imtiyoz oshirmaydi) — o'lchandi, ishlaydi; cap_drop/read_only — rasmiy image yozadi (sinalmagan, kiritilmadi)
     stop_grace_period: 30s          # Postgres "smart" shutdown — checkpoint; sukut 10 s yetmasligi mumkin
     deploy:
       resources:
@@ -19,18 +28,19 @@ services:
   redis:
     <<: *log
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]   # 34 #01: entrypoint root → gosu/setpriv bilan postgres/redis'ga TUSHADI (imtiyoz oshirmaydi) — o'lchandi, ishlaydi; cap_drop/read_only — rasmiy image yozadi (sinalmagan, kiritilmadi)
     deploy:
       resources:
         limits: { cpus: "0.20", memory: 128M }
 
   migratsiya:
-    <<: *log
+    <<: [*log, *qattiq]
     deploy:
       resources:
         limits: { cpus: "0.30", memory: 384M }
 
   api:
-    <<: *log
+    <<: [*log, *qattiq]
     restart: unless-stopped
     # 33 #33 o'lchovi: SIGTERM → YOPISH_KECHIKISH_MS (5 s) + ulanishlarni kutish (≤ 10 s) + yopish. Docker sukuti 10 s — undan oshsa SIGKILL (137).
     # 30 s = eng yomon holat (15 s) × 2 zaxira (32/31 BACKLOG 3)
@@ -50,7 +60,7 @@ services:
         limits: { cpus: "0.50", memory: 512M }
 
   ishchi:
-    <<: *log
+    <<: [*log, *qattiq]
     restart: unless-stopped
     stop_grace_period: 30s
     deploy:
@@ -60,6 +70,13 @@ services:
   web:
     <<: *log
     restart: unless-stopped
+    # 34 #01 o'lchovi (natijalar/tajriba/t01-web-qattiq.txt): sukut — master root; read_only'da `/var/cache/nginx` mkdir yiqiladi; cap_drop ALL'da root master
+    #   chown qila olmaydi. Yechim: butunlay nginx foydalanuvchisi (101) nomidan — capability kerak emas, yozadigan joylar xotirada
+    user: "101:101"
+    read_only: true
+    tmpfs: ["/var/cache/nginx:uid=101,gid=101", "/run:uid=101,gid=101", "/tmp:uid=101,gid=101"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
     deploy:
       resources:
         limits: { cpus: "0.15", memory: 64M }

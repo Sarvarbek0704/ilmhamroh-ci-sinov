@@ -6,9 +6,9 @@ name: CI
 on:
   push:
     branches: [main]
-    paths: ["vazifalar-api/**", "vazifalar/**", ".github/workflows/ci.yml"]
+    paths: ["vazifalar-api/**", "vazifalar/**", "sql/**", ".github/workflows/ci.yml"]
   pull_request:
-    paths: ["vazifalar-api/**", "vazifalar/**", ".github/workflows/ci.yml"]
+    paths: ["vazifalar-api/**", "vazifalar/**", "sql/**", ".github/workflows/ci.yml"]
   workflow_dispatch:
 
 # #03: GITHUB_TOKEN — eng kam ruxsat (sukut: repo sozlamasiga bog'liq). Job o'ziga kerak bo'lsa — job darajasida kengaytiradi
@@ -73,13 +73,17 @@ jobs:
         run: |
           mkdir -p "$KANON_TLS"
           openssl req -x509 -newkey rsa:2048 -nodes -days 2 -subj "/CN=127.0.0.1" -addext "subjectAltName=IP:127.0.0.1" -keyout "$KANON_TLS/kalit.pem" -out "$KANON_TLS/sert.pem"
-      - name: Test bazalari (Prisma migratsiyalari) va namuna
+      # test bazalari — Prisma migratsiyalari (namunasiz). Namuna bazasi (Aziz, demo parol — ombor-modul.test) — sql/ dan, lokal skriptlar/qur.sh dagidek.
+      # 34 #02 1-yugurish: 31/33 dagi `npm run db:seed` (seed.ts — …@seed.example foydalanuvchilar) namunani BERMAYDI → 3 test yiqildi (CI hech yurmagan edi)
+      - name: Test bazalari va namuna bazasi
         run: |
-          for b in vazifalar_test vazifalar_test_prisma vazifalar_test_auth vazifalar; do
+          for b in vazifalar_test vazifalar_test_prisma vazifalar_test_auth; do
             psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE $b"
             DATABASE_URL=postgres://postgres@127.0.0.1:5432/$b npx prisma migrate deploy
           done
-          DATABASE_URL=postgres://postgres@127.0.0.1:5432/vazifalar npm run db:seed
+          psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE vazifalar"
+          for f in $(ls ../sql/*.sql | sort); do psql -h 127.0.0.1 -U postgres -d vazifalar -q -1 -v ON_ERROR_STOP=1 -f "$f" > /dev/null; done
+          echo "namuna: $(psql -h 127.0.0.1 -U postgres -d vazifalar -Atc 'SELECT count(*) FROM foydalanuvchilar') foydalanuvchi"
       - run: npm run tip
       - run: npm run lint
       # 2 vCPU runner — DB testlari parallel yukda flaky bo'lgan (31 #34)

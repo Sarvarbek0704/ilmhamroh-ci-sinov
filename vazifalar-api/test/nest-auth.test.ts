@@ -148,6 +148,18 @@ if (typeof baza === "string") {
       const r = await request(http).post("/v1/auth/kirish").send({ email: "yoq@example.com", parol: "notogri-parol-12345" }).expect(401);
       expect(r.headers["cache-control"]).toBe("no-store");
     });
+
+    // 34 #01 (33 BACKLOG 1): /v1/auth dan TASHQARIDAGI 401 ham keshlanmasin — 33 #25 da nginx `proxy_cache_valid 401` bilan keshlangan (HIT).
+    // 404 — RFC 9111 bo'yicha evristik keshlanadi; muvaffaqiyatli GET esa o'z siyosatini saqlaydi (private, no-cache)
+    test("xato javoblari (401, 404) — Cache-Control: no-store; 200 — private, no-cache", async () => {
+      const r401 = await request(http).get("/v1/vazifalar").expect(401);
+      expect(r401.headers["cache-control"]).toBe("no-store");
+      const r404 = await request(http).get("/v1/yoq-manzil").expect(404);
+      expect(r404.headers["cache-control"]).toBe("no-store");
+      const c = await hisobOch(http, d, "kesh@example.com");
+      const r200 = await request(http).get("/v1/vazifalar").set("Cookie", c).expect(200);
+      expect(r200.headers["cache-control"]).toBe("private, no-cache");
+    });
   });
 
   test("servislararo HMAC (ichki): imzosiz 401, to'g'ri imzo 200, takror nonce 401", async () => {

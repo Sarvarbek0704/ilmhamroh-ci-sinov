@@ -46,6 +46,10 @@ export function problemYasa(holat: number, sozlama: { kod?: string | undefined; 
 }
 
 export function problemYubor(res: Response, p: Problem): void {
+  // 34 #01 (33 BACKLOG 1): xato javobi HECH QAYERDA keshlanmasin. 401/403 — sessiyaga bog'liq; 404/410 esa RFC 9111 §4.2.2 bo'yicha "evristik keshlanadi"
+  // (sarlavhasiz javobni proxy/brauzer o'zi keshlay oladi). 33 #25 o'lchovi: nginx `proxy_cache_valid 401` bilan 401 keshlandi (HIT). Handler'dagi
+  // @Header("Cache-Control", "private, no-cache") xato bo'lsa ham shu bilan almashtiriladi — xato javobi qayta ishlatilmaydi
+  res.set("Cache-Control", "no-store");
   // res.json() Content-Type ni application/json qiladi — avval o'zimiz qo'yamiz, json() uni o'zgartirmaydi
   res.status(p.status).type("application/problem+json").json(p);
 }
