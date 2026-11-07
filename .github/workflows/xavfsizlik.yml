@@ -1,0 +1,97 @@
+# .github/workflows/xavfsizlik.yml — 34-qism #03 (O-45): Actions xavfsizligi — haqiqiy namoyishlar (faqat sinov repo).
+#   ruxsat:     GITHUB_TOKEN `contents: read` bilan yozish → 403; `issues: write` bilan → ruxsat (eng kam ruxsat tamoyili)
+#   sir:        repo secret logda *** bo'ladi; lekin o'zgartirilgan ko'rinishi (base64) — YO'Q (maskalash faqat aynan qiymatni yashiradi). Qiymat SINTETIK
+#   oidc:       OIDC token DA'VOLARI (claims) — token o'zi chiqarilmaydi; bulutga (AWS/GCP) almashish — SINALMAGAN (hisob yo'q)
+#   inyeksiya:  PR sarlavhasi `${{ }}` bilan run: ichiga — buyruq bo'lib bajariladi (zaif); env orqali — matn (xavfsiz)
+name: Xavfsizlik
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, edited]
+    paths: [".github/workflows/xavfsizlik.yml", "sinov/**"]
+
+permissions: {}            # sukut — HECH NARSA; har job o'ziga kerakini oladi
+
+jobs:
+  ruxsat-oqish:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Label yaratishga urinish (GITHUB_TOKEN, faqat contents:read)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api "repos/$REPO/labels" -f name="sinov-oqish-$GITHUB_RUN_ID" -f color=ededed 2>&1 | head -c 300 || true
+          echo
+
+  ruxsat-yozish:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write          # label — issues ruxsati ostida
+    steps:
+      - name: Label yaratish va o'chirish (GITHUB_TOKEN, issues:write)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api "repos/$REPO/labels" -f name="sinov-yozish-$GITHUB_RUN_ID" -f color=ededed --jq '"yaratildi: " + .name'
+          gh api -X DELETE "repos/$REPO/labels/sinov-yozish-$GITHUB_RUN_ID" && echo "o'chirildi"
+
+  sir:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Maskalash qanday ishlaydi (SINTETIK qiymat)
+        env:
+          SIRI: ${{ secrets.SINOV_SIRI }}
+        run: |
+          echo "aynan qiymat: $SIRI"
+          echo "uzunligi: ${#SIRI}"
+          echo "base64: $(printf '%s' "$SIRI" | base64)"
+          echo "teskari: $(printf '%s' "$SIRI" | rev)"
+
+  oidc:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      id-token: write        # OIDC token so'rash huquqi (faqat shu job)
+    steps:
+      - name: OIDC token da'volari (token chiqarilmaydi)
+        run: |
+          JAVOB=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com")
+          TOKEN=$(printf '%s' "$JAVOB" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).value))')
+          echo "::add-mask::$TOKEN"
+          echo "token uzunligi: ${#TOKEN}, qismlar: $(printf '%s' "$TOKEN" | tr -cd '.' | wc -c | awk '{print $1+1}')"
+          printf '%s' "$TOKEN" | node -e '
+            let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const [h,p]=s.split(".").slice(0,2).map(x=>JSON.parse(Buffer.from(x,"base64url")));
+              console.log("sarlavha:", JSON.stringify({alg:h.alg, typ:h.typ}));
+              const k=["iss","aud","sub","repository","repository_owner","ref","ref_type","sha","workflow","job_workflow_ref","event_name","runner_environment","environment","repository_visibility"];
+              for (const n of k) if (p[n]!==undefined) console.log(n.padEnd(22), p[n]);
+              console.log("amal muddati (s):", p.exp-p.iat);
+            });'
+
+  inyeksiya:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: ZAIF — sarlavha to'g'ridan run ichiga
+        run: |
+          echo "PR sarlavhasi: ${{ github.event.pull_request.title }}"
+      - name: XAVFSIZ — sarlavha env orqali (shell uni matn sifatida oladi)
+        env:
+          SARLAVHA: ${{ github.event.pull_request.title }}
+        run: |
+          echo "PR sarlavhasi: $SARLAVHA"

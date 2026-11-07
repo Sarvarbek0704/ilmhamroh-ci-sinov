@@ -1,0 +1,81 @@
+# .github/workflows/ifodalar.yml — 34-qism #02 (O-44): kontekstlar, ifodalar, job outputs, dinamik matrix, `if` shartlari. Arzon (har job ~5 s).
+#   Faqat qo'lda (workflow_dispatch) va haftalik jadval (schedule — sukut branch'da, UTC; arxivlangan repoda o'chadi).
+name: Ifodalar
+
+on:
+  workflow_dispatch:
+    inputs:
+      muhit:
+        description: Qaysi muhit
+        type: choice
+        options: [sinov, production]
+        default: sinov
+      batafsil:
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 3 * * 1"      # dushanba 03:17 UTC (08:17 Toshkent). Daqiqa :00 emas — GitHub yuklamasi soat boshida eng yuqori
+
+permissions:
+  contents: read
+
+jobs:
+  tayyorla:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      versiya: ${{ steps.v.outputs.versiya }}
+      papkalar: ${{ steps.v.outputs.papkalar }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: v
+        run: |
+          echo "versiya=$(node -p 'require("./vazifalar-api/package.json").version')" >> "$GITHUB_OUTPUT"
+          echo 'papkalar=["vazifalar-api","vazifalar"]' >> "$GITHUB_OUTPUT"
+      - name: Kontekstlar (github, runner, inputs) — sirlarsiz
+        env:
+          HODISA: ${{ github.event_name }}
+          KIM: ${{ github.actor }}
+          REF: ${{ github.ref }}
+          MUHIT: ${{ inputs.muhit || 'jadval' }}
+          OS: ${{ runner.os }}
+          ARCH: ${{ runner.arch }}
+          LOCK_HASH: ${{ hashFiles('vazifalar-api/package-lock.json') }}
+        run: |
+          echo "hodisa=$HODISA kim=$KIM ref=$REF muhit=$MUHIT os=$OS arch=$ARCH"
+          echo "lock hash (kesh kaliti uchun): ${LOCK_HASH:0:16}…"
+
+  # dinamik matrix: oldingi job'ning JSON chiqishidan (fromJSON)
+  har-papka:
+    needs: tayyorla
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        papka: ${{ fromJSON(needs.tayyorla.outputs.papkalar) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: echo "${{ matrix.papka }} — $(node -p "require('./${{ matrix.papka }}/package.json').name") (api versiyasi ${{ needs.tayyorla.outputs.versiya }})"
+
+  # `if`: faqat production tanlanganda; startsWith/contains — ifoda funksiyalari
+  faqat-production:
+    needs: tayyorla
+    if: inputs.muhit == 'production' && startsWith(github.ref, 'refs/heads/main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: echo "production yo'li (versiya ${{ needs.tayyorla.outputs.versiya }})"
+
+  # always()/failure(): oldingi job yiqilsa ham ishlaydigan "hisobot" job
+  hisobot:
+    needs: [tayyorla, har-papka, faqat-production]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          NATIJALAR: ${{ toJSON(needs.*.result) }}
+          BATAFSIL: ${{ inputs.batafsil }}
+        run: |
+          echo "needs natijalari: $NATIJALAR"
+          [ "$BATAFSIL" = true ] && echo "batafsil rejim" || echo "qisqa rejim"
