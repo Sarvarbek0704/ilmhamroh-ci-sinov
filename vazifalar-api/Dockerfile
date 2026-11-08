@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Dockerfile — 33-qism #28–#30, #36 (O-33…O-35, O-42): vazifalar-api production image (multi-stage).
-#   build:  docker build -t vazifalar-api:4.1.1 .            (arm64 server uchun: docker buildx build --platform linux/arm64 …)
-#   run:    docker run --env-file .env -p 127.0.0.1:3000:3000 vazifalar-api:4.1.1
+#   build:  docker build -t vazifalar-api:4.2.0 .            (arm64 server uchun: docker buildx build --platform linux/arm64 …)
+#   run:    docker run --env-file .env -p 127.0.0.1:3000:3000 vazifalar-api:4.2.0
 # Bosqichlar: deps (hamma bog'liqlik, kesh) → build (nest build) → prod-deps (faqat prod) → runtime (slim, non-root, tini yo'q — #29 o'lchovi).
 # Base image versiya + digest bilan qotiriladi (33 #29): teg ko'chishi mumkin, digest — yo'q. Yangilash — ataylab (Dependabot/Renovate — 34-qism).
 ARG NODE_IMAGE=node:24.22.2-trixie-slim@sha256:90943ae8e65444498fd83f0f23d2a19ef5807e00396cee96bb96b87f9d9ca976

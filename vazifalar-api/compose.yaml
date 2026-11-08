@@ -5,7 +5,7 @@
 name: vazifalar
 
 x-api: &api
-  image: ${API_IMAGE:-vazifalar-api:4.1.1}
+  image: ${API_IMAGE:-vazifalar-api:4.2.0}
   build:
     context: .
   # 34 #09 (12-factor / eng kam huquq) — o'lchandi: `env_file: .env` api konteyneriga .env dagi HAMMA narsani berardi, jumladan POSTGRES_PAROL (superuser)

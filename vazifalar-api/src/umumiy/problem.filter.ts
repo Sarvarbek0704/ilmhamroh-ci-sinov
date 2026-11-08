@@ -9,6 +9,7 @@ import type { Problem } from "./problem.ts";
 import { joriyLog } from "./log.ts";
 import type { Log } from "./log.ts";
 import { LOG } from "../tokenlar.ts";
+import { captureException } from "@sentry/node";
 
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
@@ -17,6 +18,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
   /** to'liq xato (stack bilan) — faqat logga; sorovId joriy so'rov logger'idan (AsyncLocalStorage) */
   private logla(xato: unknown): void {
     joriyLog(this.log).error({ err: xato }, "kutilmagan xato");
+    // 34 #15: xato kuzatuvi (Sentry/GlitchTip) — faqat KUTILMAGAN xatolar (4xx — mijoz xatosi, yuborilmaydi). SENTRY_DSN yo'q bo'lsa — no-op
+    captureException(xato);
   }
 
   catch(xato: unknown, host: ArgumentsHost): void {

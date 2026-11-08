@@ -1,0 +1,29 @@
+# compose.ilova-kuzatuv.yaml — 34-qism #15, #17: ilovani kuzatuv stack'iga ulash (compose.yaml + compose.prod.yaml [+ compose.bluegreen.yaml] USTIGA).
+#   `node --import ./dist/kuzatuv/boshlash.js` — kuzatuv moduli ilovadan OLDIN yuklanadi (src/kuzatuv/boshlash.ts). Env bo'sh bo'lsa — o'chiq.
+#   1-urinish: NODE_OPTIONS=--import… — Docker HEALTHCHECK'dagi `node -e fetch(…)` ham NODE_OPTIONS'ni meros oldi va har tekshiruvda OTel SDK + Sentry'ni
+#   ishga tushirdi → 3 s timeout'dan oshdi → konteyner "unhealthy", `up --wait` yiqildi. Shuning uchun — faqat asosiy jarayonning `command` ida.
+#   APP_RELEASE — image tegi (CD: sha-<…>): trace'dagi service.version va GlitchTip'dagi release shundan.
+x-kuzatuv: &kuzatuv
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otelcol:4318}
+  OTEL_TRACES_SAMPLER: parentbased_traceidratio
+  OTEL_TRACES_SAMPLER_ARG: ${OTEL_NAMUNA:-1.0}          # production'da masalan 0.1 (10 %) — #17
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_SAMPLE_RATE: ${SENTRY_NAMUNA:-1.0}
+  APP_RELEASE: ${APP_RELEASE:-lokal}
+  APP_MUHIT: ${APP_MUHIT:-lokal}
+services:
+  api:
+    command: ["node", "--import=./dist/kuzatuv/boshlash.js", "dist/main.js"]
+    environment:
+      <<: *kuzatuv
+      OTEL_SERVICE_NAME: vazifalar-api
+  api-yashil:
+    command: ["node", "--import=./dist/kuzatuv/boshlash.js", "dist/main.js"]
+    environment:
+      <<: *kuzatuv
+      OTEL_SERVICE_NAME: vazifalar-api
+  ishchi:
+    command: ["node", "--import=./dist/kuzatuv/boshlash.js", "dist/ishchi.js"]
+    environment:
+      <<: *kuzatuv
+      OTEL_SERVICE_NAME: vazifalar-ishchi

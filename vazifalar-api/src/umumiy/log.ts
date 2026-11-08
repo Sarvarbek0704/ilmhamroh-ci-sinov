@@ -6,6 +6,8 @@ import { pino } from "pino";
 import type { DestinationStream, Logger, LoggerOptions } from "pino";
 import { pinoHttp } from "pino-http";
 import type { RequestHandler } from "express";
+import { isSpanContextValid, trace } from "@opentelemetry/api";
+import type { Span } from "@opentelemetry/api";
 
 export type Log = Logger;
 
@@ -19,6 +21,16 @@ export const YASHIRIN = [
   "*.token",
 ];
 
+/**
+ * 34 #17: log ↔ trace bog'lanishi — faol OpenTelemetry span bo'lsa har log qatoriga traceId/spanId (Loki'dagi qatordan Jaeger'dagi trace'ga o'tish).
+ * OTel SDK yuklanmagan bo'lsa (testlar, dev) — span yo'q, qo'shimcha maydon ham yo'q. 1-urinish: @opentelemetry/instrumentation-pino — ESM'da
+ * `import { pino } from "pino"` (nomli import) bilan HECH QAYSI qatorga traceId qo'shmadi (0 ta) → instrumentatsiyasiz, o'zimizning mixin.
+ */
+export function traceMaydonlari(span: Span | undefined = trace.getActiveSpan()): { traceId?: string; spanId?: string } {
+  const k = span?.spanContext();
+  return k !== undefined && isSpanContextValid(k) ? { traceId: k.traceId, spanId: k.spanId } : {};
+}
+
 export function logYarat(daraja: string, manzil?: DestinationStream): Log {
   const sozlama: LoggerOptions = {
     level: daraja,
@@ -27,6 +39,7 @@ export function logYarat(daraja: string, manzil?: DestinationStream): Log {
     redact: { paths: YASHIRIN, censor: "[yashirildi]" },
     base: { ilova: "vazifalar-api" },
     formatters: { level: (label) => ({ daraja: label }) },
+    mixin: () => traceMaydonlari(),
   };
   return manzil === undefined ? pino(sozlama) : pino(sozlama, manzil);
 }

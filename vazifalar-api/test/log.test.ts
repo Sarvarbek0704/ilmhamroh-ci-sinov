@@ -69,3 +69,14 @@ test("trust proxy: so'rov logidagi ip — X-Forwarded-For dan (Express req.ip), 
     await yop(server, 1000);
   }
 });
+
+// 34 #17: log ↔ trace — faol span bo'lsa traceId/spanId, bo'lmasa (OTel SDK yo'q) — hech narsa
+test("traceMaydonlari: yaroqli span konteksti → traceId/spanId; yaroqsiz yoki yo'q → {}", async () => {
+  const { trace } = await import("@opentelemetry/api");
+  const { traceMaydonlari } = await import("../src/umumiy/log.ts");
+  const sc = { traceId: "95a24ea362b49707c9ac107d6f7dd388", spanId: "4bf92f3577b34da6", traceFlags: 1 };
+  assert.deepEqual(traceMaydonlari(trace.wrapSpanContext(sc)), { traceId: sc.traceId, spanId: sc.spanId });
+  assert.deepEqual(traceMaydonlari(trace.wrapSpanContext({ ...sc, traceId: "0".repeat(32) })), {});
+  assert.deepEqual(traceMaydonlari(undefined), {});
+  assert.deepEqual(traceMaydonlari(), {});   // SDK'siz — faol span yo'q
+});
