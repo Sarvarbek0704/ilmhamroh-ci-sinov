@@ -50,7 +50,7 @@ jobs:
           unzip -q "tofu_${TOFU}_linux_amd64.zip" tofu && sudo mv tofu /usr/local/bin/ && tofu version
       - name: State bucket (RustFS)
         run: |
-          for i in $(seq 30); do curl -s -o /dev/null http://127.0.0.1:9000/ && break; sleep 1; done
+          for _ in $(seq 30); do curl -s -o /dev/null http://127.0.0.1:9000/ && break; sleep 1; done
           AWS_ACCESS_KEY_ID=ci-state-kalit AWS_SECRET_ACCESS_KEY=ci-state-siri-faqat-test aws --endpoint-url http://127.0.0.1:9000 --region us-east-1 s3 mb s3://tofu-state
       - run: tofu fmt -check -recursive
       - name: tofu init
