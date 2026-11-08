@@ -8,9 +8,17 @@ x-api: &api
   image: ${API_IMAGE:-vazifalar-api:4.1.1}
   build:
     context: .
-  env_file: .env
+  # 34 #09 (12-factor / eng kam huquq) — o'lchandi: `env_file: .env` api konteyneriga .env dagi HAMMA narsani berardi, jumladan POSTGRES_PAROL (superuser)
+  #   va boshqa rollar parollari (`docker inspect` / `/proc/1/environ` da ko'rinadi). Endi ilovaga faqat o'ziga kerak qiymatlar (.env Compose interpolatsiyasi uchun qoladi)
   environment: &api-env
     NODE_ENV: ${NODE_ENV:-production}
+    ILOVA_SIRI: ${ILOVA_SIRI:?ILOVA_SIRI kerak}
+    CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS kerak}
+    ILOVA_URL: ${ILOVA_URL:?ILOVA_URL kerak}
+    API_URL: ${API_URL:?API_URL kerak}
+    COOKIE_SECURE: ${COOKIE_SECURE:-true}
+    HSTS: ${HSTS:-true}
+    LOG_LEVEL: ${LOG_LEVEL:-info}
     HOST: 0.0.0.0
     PORT: "3000"
     SAQLASH: prisma
@@ -69,7 +77,6 @@ services:
       API_DB_PAROL: ${API_DB_PAROL}
       AUTH_DB_PAROL: ${AUTH_DB_PAROL}
       ISHCHI_DB_PAROL: ${ISHCHI_DB_PAROL:?ISHCHI_DB_PAROL kerak}
-    env_file: []
     depends_on:
       db: { condition: service_healthy }
     restart: "no"
