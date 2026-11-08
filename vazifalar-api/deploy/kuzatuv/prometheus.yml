@@ -1,0 +1,24 @@
+# prometheus.yml — 34-qism #14 (O-58): vazifalar-api metrikalari (prom-client, /metrics), blackbox (uptime, #16), o'zi va alertmanager.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+rule_files: ["/etc/prometheus/qoidalar.yml"]
+alerting:
+  alertmanagers: [{ static_configs: [{ targets: ["alertmanager:9093"] }] }]
+scrape_configs:
+  - job_name: vazifalar-api
+    metrics_path: /metrics
+    # ikkala nusxa (blue-green, #07) — har biri alohida "instance"
+    static_configs: [{ targets: ["api:3000", "api-yashil:3000"] }]
+  - job_name: prometheus
+    static_configs: [{ targets: ["localhost:9090"] }]
+  # #16: tashqaridan ko'rinish — blackbox HTTP probe (Uptime Kuma o'rniga, fayl bilan sozlanadi)
+  - job_name: uptime
+    metrics_path: /probe
+    params: { module: [http_2xx_401] }
+    # maqsadlar — muhitga xos fayl (domen kodda emas): ichki web, web → api (401 = tirik), tashqi https domen (TLS muddati ham)
+    file_sd_configs: [{ files: ["/etc/prometheus/uptime-maqsadlar.yml"] }]
+    relabel_configs:
+      - { source_labels: [__address__], target_label: __param_target }
+      - { source_labels: [__param_target], target_label: instance }
+      - { target_label: __address__, replacement: "blackbox:9115" }

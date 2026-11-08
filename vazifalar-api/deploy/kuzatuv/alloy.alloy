@@ -1,0 +1,36 @@
+// alloy.alloy — 34-qism #13 (O-57): Docker konteynerlari loglari → Loki. Faqat shu Compose loyihasi (label bo'yicha), JSON (Pino) maydonlari label emas — kardinallik.
+discovery.docker "konteynerlar" {
+  host = "unix:///var/run/docker.sock"
+  filter {
+    name   = "label"
+    values = ["com.docker.compose.project=" + sys.env("LOYIHA")]
+  }
+}
+discovery.relabel "yorliqlar" {
+  targets = []
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "xizmat"
+  }
+}
+loki.source.docker "loglar" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.konteynerlar.targets
+  relabel_rules = discovery.relabel.yorliqlar.rules
+  forward_to    = [loki.process.pino.receiver]
+}
+// Pino JSON'dan faqat past kardinallikdagi "daraja" label bo'ladi; sorovId, url — log ichida qoladi (LogQL `| json` bilan qidiriladi)
+loki.process "pino" {
+  stage.json {
+    expressions = { daraja = "daraja" }
+  }
+  stage.labels {
+    values = { daraja = "" }
+  }
+  forward_to = [loki.write.lokal.receiver]
+}
+loki.write "lokal" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

@@ -1,0 +1,5 @@
+# uptime-maqsadlar.yml (namuna) — muhitga xos: nusxa oling va domenni o'zingiznikiga almashtiring
+- targets:
+    - http://web:8080/
+    - http://web:8080/v1/vazifalar
+    - https://vazifalar.example/

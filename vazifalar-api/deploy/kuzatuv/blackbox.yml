@@ -1,0 +1,9 @@
+# blackbox.yml — 34-qism #16: HTTP probe. 401 ham "tirik" (API sessiyasiz) — aks holda /v1 doim "yiqilgan" ko'rinardi
+modules:
+  http_2xx_401:
+    prober: http
+    timeout: 5s
+    http:
+      valid_status_codes: [200, 401]
+      follow_redirects: false
+      preferred_ip_protocol: ip4

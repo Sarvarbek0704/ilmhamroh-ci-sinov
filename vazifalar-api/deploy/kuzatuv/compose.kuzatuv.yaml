@@ -1,0 +1,80 @@
+# compose.kuzatuv.yaml — 34-qism #12–#19: kuzatuv stack (metrika, log, trace, uptime, alert). Ilova stack'i bilan BIR tarmoqda (tashqi tarmoq <loyiha>_ichki).
+#   docker compose -p <loyiha>-kuzatuv -f deploy/kuzatuv/compose.kuzatuv.yaml up -d      (LOYIHA=<ilova compose loyihasi nomi>)
+# Portlar faqat 127.0.0.1 (UI'lar: Grafana 4980, Prometheus 4981, Alertmanager 4982, alert pochta 4983, Jaeger 4986). Parollar — sintetik (lokal).
+# Versiyalar — 2026-11-08, 7 kun qoidasi bilan.
+name: kuzatuv
+x-log: &log
+  logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
+services:
+  prometheus:
+    <<: *log
+    image: prom/prometheus:v3.15.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=15d", "--web.enable-lifecycle"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./qoidalar.yml:/etc/prometheus/qoidalar.yml:ro
+      - ./${UPTIME_MAQSADLAR:-uptime-maqsadlar.example.yml}:/etc/prometheus/uptime-maqsadlar.yml:ro
+      - prom-data:/prometheus
+    ports: ["127.0.0.1:4981:9090"]
+    deploy: { resources: { limits: { cpus: "0.50", memory: 512M } } }
+  alertmanager:
+    <<: *log
+    image: prom/alertmanager:v0.34.2
+    volumes: ["./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro"]
+    ports: ["127.0.0.1:4982:9093"]
+    deploy: { resources: { limits: { cpus: "0.10", memory: 64M } } }
+  alertpochta:
+    <<: *log
+    image: axllent/mailpit:v1.33.0
+    ports: ["127.0.0.1:4983:8025"]
+    deploy: { resources: { limits: { cpus: "0.10", memory: 64M } } }
+  blackbox:
+    <<: *log
+    image: prom/blackbox-exporter:v0.29.1
+    command: ["--config.file=/etc/blackbox/blackbox.yml"]
+    volumes: ["./blackbox.yml:/etc/blackbox/blackbox.yml:ro"]
+    deploy: { resources: { limits: { cpus: "0.10", memory: 64M } } }
+  loki:
+    <<: *log
+    image: grafana/loki:3.7.9
+    command: ["-config.file=/etc/loki/loki.yml"]
+    volumes: ["./loki.yml:/etc/loki/loki.yml:ro", "loki-data:/loki"]
+    deploy: { resources: { limits: { cpus: "0.50", memory: 512M } } }
+  alloy:
+    <<: *log
+    image: grafana/alloy:v1.21.3
+    command: ["run", "/etc/alloy/config.alloy", "--storage.path=/var/lib/alloy/data"]
+    environment: { LOYIHA: "${LOYIHA:-vazifalar}" }
+    volumes:
+      - ./alloy.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro   # DIQQAT: docker.sock = host root'iga teng huquq (faqat o'qish bo'lsa ham API to'liq) — 33 #37 Traefik izohi
+    deploy: { resources: { limits: { cpus: "0.25", memory: 256M } } }
+  otelcol:
+    <<: *log
+    image: otel/opentelemetry-collector-contrib:0.164.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes: ["./otelcol.yaml:/etc/otelcol/config.yaml:ro"]
+    deploy: { resources: { limits: { cpus: "0.25", memory: 256M } } }
+  jaeger:
+    <<: *log
+    image: jaegertracing/jaeger:2.22.0
+    ports: ["127.0.0.1:4986:16686"]
+    deploy: { resources: { limits: { cpus: "0.25", memory: 384M } } }
+  grafana:
+    <<: *log
+    image: grafana/grafana:13.3.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_PAROL:?GRAFANA_PAROL kerak}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports: ["127.0.0.1:4980:3000"]
+    deploy: { resources: { limits: { cpus: "0.25", memory: 256M } } }
+volumes: { prom-data: {}, loki-data: {}, grafana-data: {} }
+networks:
+  default:
+    name: ${LOYIHA:-vazifalar}_ichki
+    external: true

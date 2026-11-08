@@ -1,0 +1,20 @@
+# otelcol.yaml — 34-qism #17 (O-61): OpenTelemetry Collector — ilovadan OTLP qabul qiladi, batch, Jaeger'ga (OTLP) uzatadi.
+#   Collector — ilova va backend orasidagi qatlam: backend almashsa (Jaeger → Tempo) ilova o'zgarmaydi; sampling/filtrlash shu yerda.
+receivers:
+  otlp:
+    protocols:
+      http: { endpoint: 0.0.0.0:4318 }
+processors:
+  batch: { timeout: 2s }
+  # sir/PII sarlavhalari span atributlariga tushmasin
+  attributes/tozala:
+    actions:
+      - { key: http.request.header.cookie, action: delete }
+      - { key: http.request.header.authorization, action: delete }
+exporters:
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls: { insecure: true }
+service:
+  pipelines:
+    traces: { receivers: [otlp], processors: [attributes/tozala, batch], exporters: [otlp/jaeger] }

@@ -1,0 +1,31 @@
+{
+  "uid": "vazifalar-red",
+  "title": "vazifalar-api — RED (so'rov, xato, davomiylik)",
+  "schemaVersion": 41,
+  "time": { "from": "now-30m", "to": "now" },
+  "refresh": "10s",
+  "panels": [
+    { "id": 1, "type": "timeseries", "title": "So'rovlar / s (status bo'yicha)", "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [{ "refId": "A", "expr": "sum by (status) (rate(http_sorovlar_jami[1m]))", "legendFormat": "{{status}}" }] },
+    { "id": 2, "type": "stat", "title": "5xx ulushi (5 daq)", "gridPos": { "x": 12, "y": 0, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prom" }, "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [{ "refId": "A", "expr": "sum(rate(http_sorovlar_jami{status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_sorovlar_jami[5m])), 1e-9)" }] },
+    { "id": 3, "type": "stat", "title": "Uptime probe", "gridPos": { "x": 18, "y": 0, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [{ "refId": "A", "expr": "probe_success", "legendFormat": "{{instance}}" }] },
+    { "id": 4, "type": "timeseries", "title": "p50 / p99 (s)", "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prom" }, "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.5, sum by (le) (rate(http_sorov_davomiyligi_soniya_bucket[1m])))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.99, sum by (le) (rate(http_sorov_davomiyligi_soniya_bucket[1m])))", "legendFormat": "p99" } ] },
+    { "id": 5, "type": "timeseries", "title": "Event loop kechikishi va xotira (USE)", "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        { "refId": "A", "expr": "nodejs_eventloop_lag_p99_seconds", "legendFormat": "lag p99 {{instance}}" },
+        { "refId": "B", "expr": "process_resident_memory_bytes / 1e6", "legendFormat": "RSS MB {{instance}}" } ] },
+    { "id": 6, "type": "logs", "title": "Xato loglari (Loki)", "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{ "refId": "A", "expr": "{xizmat=~\"api|api-yashil\", daraja=~\"error|warn\"}" }] }
+  ]
+}
