@@ -38,4 +38,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:3000/health/live').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
 # exec ko'rinish: node PID 1, SIGTERM to'g'ridan ilovaga (shell orqali EMAS — #29 o'lchovi)
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/mainX.js"]
