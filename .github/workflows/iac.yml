@@ -1,0 +1,65 @@
+# .github/workflows/iac.yml — 34-qism #30 (O-77): PR'da `tofu plan` (o'zgarish ko'rinadi, qo'llanmaydi), natija — job summary'da.
+#   Sinov repo: AWS o'rniga Moto, state uchun S3 — RustFS servisi (har yugurishda bo'sh: plan "hammasi yangi" ko'rsatadi). Haqiqiy loyihada: remote state (S3/R2) +
+#   OIDC bilan bulut roli (#03 — sinalmagan), `apply` — faqat main'ga merge'dan keyin, environment tasdig'i bilan.
+name: IaC
+
+on:
+  pull_request:
+    paths: ["vazifalar-api/deploy/iac/**", ".github/workflows/iac.yml"]
+  push:
+    branches: [main]
+    paths: ["vazifalar-api/deploy/iac/**", ".github/workflows/iac.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iac-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: vazifalar-api/deploy/iac
+    services:
+      moto:
+        image: motoserver/moto:5.2.5
+        ports: ["4950:5000"]
+      s3:
+        image: rustfs/rustfs:1.0.4
+        env:
+          RUSTFS_ACCESS_KEY: ci-state-kalit
+          RUSTFS_SECRET_KEY: ci-state-siri-faqat-test
+        ports: ["9000:9000"]
+    env:
+      TOFU: "1.13.2"
+      AWS_ACCESS_KEY_ID: test            # Moto — sintetik
+      AWS_SECRET_ACCESS_KEY: test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: OpenTofu (rasmiy reliz + sha256)
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -sSLO "https://github.com/opentofu/opentofu/releases/download/v${TOFU}/tofu_${TOFU}_linux_amd64.zip"
+          curl -sSLO "https://github.com/opentofu/opentofu/releases/download/v${TOFU}/tofu_${TOFU}_SHA256SUMS"
+          grep "tofu_${TOFU}_linux_amd64.zip" "tofu_${TOFU}_SHA256SUMS" | sha256sum -c -
+          unzip -q "tofu_${TOFU}_linux_amd64.zip" tofu && sudo mv tofu /usr/local/bin/ && tofu version
+      - name: State bucket (RustFS)
+        run: |
+          for i in $(seq 30); do curl -s -o /dev/null http://127.0.0.1:9000/ && break; sleep 1; done
+          AWS_ACCESS_KEY_ID=ci-state-kalit AWS_SECRET_ACCESS_KEY=ci-state-siri-faqat-test aws --endpoint-url http://127.0.0.1:9000 --region us-east-1 s3 mb s3://tofu-state
+      - run: tofu fmt -check -recursive
+      - name: tofu init
+        run: tofu init -input=false -backend-config='endpoints={s3="http://127.0.0.1:9000"}' -backend-config=access_key=ci-state-kalit -backend-config=secret_key=ci-state-siri-faqat-test
+      - run: tofu validate
+      - name: tofu plan → summary
+        run: |
+          set -o pipefail
+          tofu plan -input=false -no-color -detailed-exitcode -var aws_endpoint=http://127.0.0.1:4950 -out=reja.tfplan | tee reja.txt || k=$?
+          { echo '### tofu plan'; echo '```'; grep -E '^  # |^Plan:|^No changes' reja.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # 0 — o'zgarish yo'q, 2 — o'zgarish bor (xato EMAS), 1 — xato
+          [ "${k:-0}" != 1 ]

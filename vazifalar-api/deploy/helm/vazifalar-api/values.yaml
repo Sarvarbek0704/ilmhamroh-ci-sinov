@@ -1,0 +1,21 @@
+# values.yaml — muhitga xos qiymatlar (helm install … -f qiymatlar-prod.yaml bilan almashtiriladi)
+replicaCount: 2
+image:
+  repository: ghcr.io/sarvarbek0704/ilmhamroh-ci-sinov/api
+  tag: ""                 # bo'sh — Chart.appVersion
+  pullPolicy: IfNotPresent
+# kind sinovida: DB'siz rejim (SAQLASH=xotira, development). Production'da — postgres/prisma va Secret'dagi DATABASE_URL
+env:
+  NODE_ENV: development
+  SAQLASH: xotira
+  LOG_LEVEL: info
+  YOPISH_KECHIKISH_MS: "5000"
+secretEnv: {}             # masalan { ILOVA_SIRI: "…" } — Secret'ga yoziladi (base64 — SHIFR EMAS; etcd shifrlash/External Secrets — darsda)
+service:
+  type: ClusterIP
+  port: 80
+  nodePort: null
+resources:
+  requests: { cpu: 100m, memory: 192Mi }
+  limits: { cpu: 500m, memory: 384Mi }
+terminationGracePeriodSeconds: 30

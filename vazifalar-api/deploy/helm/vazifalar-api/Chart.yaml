@@ -1,0 +1,7 @@
+# Chart.yaml — 34-qism #28 (O-75): vazifalar-api uchun minimal Helm chart (Deployment + Service + ConfigMap + Secret). Lokal kind klasterda sinalgan.
+apiVersion: v2
+name: vazifalar-api
+description: vazifalar-api (NestJS) — Kubernetes'da
+type: application
+version: 0.1.0
+appVersion: "4.2.0"
